@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Fan Control</title>
+    <style>
+        .fan-control {
+            padding: 20px;
+            max-width: 500px;
+        }
+        .slider-container {
+            margin: 15px 0;
+        }
+        .status-info {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body ng-controller="fanControlController">
+    <div class="fan-control">
+        <h2><i class="fa fa-fan"></i> Fan Control</h2>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" ng-model="config.enabled" ng-change="saveConfig()">
+                Enable Fan Control
+            </label>
+        </div>
+
+        <div class="slider-container">
+            <label>Min Temperature ({{config.tempMin}}°C)</label>
+            <input type="range" min="30" max="60" ng-model="config.tempMin" ng-change="saveConfig()" class="form-control">
+        </div>
+
+        <div class="slider-container">
+            <label>Max Temperature ({{config.tempMax}}°C)</label>
+            <input type="range" min="50" max="90" ng-model="config.tempMax" ng-change="saveConfig()" class="form-control">
+        </div>
+
+        <div class="status-info" ng-if="status">
+            <h4>Current Status:</h4>
+            <p>CPU Temperature: <strong>{{status.temperature}}°C</strong></p>
+            <p>Fan Speed: <strong>{{status.fanSpeed}}%</strong></p>
+            <p>PWM Frequency: <strong>{{config.frequency}}Hz</strong></p>
+        </div>
+    </div>
+
+    <script>
+        angular.module('volumio').controller('fanControlController', function($scope, fanControlService) {
+            $scope.config = {};
+            $scope.status = {};
+
+            fanControlService.getConfig().then(function(config) {
+                $scope.config = config;
+            });
+
+            fanControlService.getStatus().then(function(status) {
+                $scope.status = status;
+            });
+
+            $scope.saveConfig = function() {
+                fanControlService.setConfig($scope.config);
+            };
+
+            // Обновление статуса каждые 10 секунд
+            setInterval(function() {
+                fanControlService.getStatus().then(function(status) {
+                    $scope.status = status;
+                });
+            }, 10000);
+        });
+    </script>
+</body>
+</html>
