@@ -2,7 +2,7 @@
   "name": "Fan Control",
   "version": "1.0.0",
   "description": "CPU Fan PWM Control with Temperature Monitoring",
-  "homepage": "https://github.com/yourname/fan-control",
+  "homepage": "https://github.com/Smartas10/fan-control",
   "title": "Fan Control",
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "icons": {
