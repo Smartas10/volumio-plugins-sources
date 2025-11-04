@@ -1,0 +1,119 @@
+{
+  "page": {
+    "label": "Fan Controller Settings",
+    "title": "Fan Controller",
+    "description": "Control your cooling fan based on system temperature"
+  },
+  "sections": [
+    {
+      "id": "settings_section",
+      "element": "section",
+      "label": "Basic Settings",
+      "icon": "fa fa-cog",
+      "onSave": {
+        "type": "controller",
+        "endpoint": "fancontroller/setUiConfig"
+      },
+      "content": [
+        {
+          "id": "enabled",
+          "element": "switch",
+          "label": "Enable Fan Control",
+          "value": false,
+          "onClick": {
+            "type": "controller",
+            "endpoint": "fancontroller/setUiConfig"
+          }
+        },
+        {
+          "id": "gpio_pin",
+          "element": "input",
+          "label": "GPIO Pin Number",
+          "type": "number",
+          "attributes": {
+            "min": 2,
+            "max": 27
+          },
+          "value": 18
+        },
+        {
+          "id": "min_temp",
+          "element": "input",
+          "label": "Minimum Temperature (°C)",
+          "type": "number",
+          "attributes": {
+            "min": 30,
+            "max": 70
+          },
+          "value": 40
+        },
+        {
+          "id": "max_temp",
+          "element": "input",
+          "label": "Maximum Temperature (°C)",
+          "type": "number",
+          "attributes": {
+            "min": 40,
+            "max": 85
+          },
+          "value": 60
+        },
+        {
+          "id": "check_interval",
+          "element": "input",
+          "label": "Check Interval (seconds)",
+          "type": "number",
+          "attributes": {
+            "min": 5,
+            "max": 60
+          },
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "manual_section",
+      "element": "section",
+      "label": "Manual Control",
+      "icon": "fa fa-sliders",
+      "content": [
+        {
+          "id": "fan_speed",
+          "element": "slider",
+          "label": "Fan Speed (%)",
+          "min": 0,
+          "max": 100,
+          "step": 10,
+          "value": 0,
+          "attributes": {
+            "showValue": true
+          },
+          "onChange": {
+            "type": "controller",
+            "endpoint": "fancontroller/setFanSpeed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "status_section",
+      "element": "section",
+      "label": "System Status",
+      "icon": "fa fa-info-circle",
+      "content": [
+        {
+          "id": "current_temp",
+          "element": "display",
+          "label": "Current Temperature",
+          "value": "Unknown"
+        },
+        {
+          "id": "current_speed",
+          "element": "display",
+          "label": "Current Fan Speed",
+          "value": "0%"
+        }
+      ]
+    }
+  ]
+}

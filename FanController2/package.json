@@ -1,0 +1,41 @@
+{
+  "name": "fancontroller",
+  "version": "1.0.0",
+  "description": "Fan Controller Plugin for Volumio by Smartas10",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Smartas10",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Smartas10/FanController"
+  },
+  "volumio_info": {
+    "prettyName": "Fan Controller",
+    "icon": "fa fa-thermometer-half",
+    "plugin_type": "system_hardware",
+    "boot_priority": 10,
+    "architectures": [
+      "arm",
+      "armv7",
+      "armv8", 
+      "x64"
+    ],
+    "website": "https://github.com/Smartas10/FanController",
+    "details": "Fan controller for Raspberry Pi and other SBCs",
+    "version": "1.0.0",
+    "changelog": "Initial release"
+  },
+  "engines": {
+    "node": ">=12.0.0",
+    "volumio": ">=3.0.0"
+  },
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "child_process": "^1.0.2",
+    "kew": "^0.7.0",
+    "v-conf": "^1.4.0"
+  }
+}
