@@ -1,0 +1,182 @@
+{
+  "page": {
+    "label": "Fan Controller - Raspberry Pi",
+    "title": "Fan Controller",
+    "description": "Fan control on GPIO 14 (Pin 8) - Starts cooling at 20°C - BCM numbering"
+  },
+  "sections": [
+    {
+      "id": "settings_section",
+      "element": "section",
+      "label": "Basic Settings",
+      "icon": "fa fa-cog",
+      "onSave": {
+        "type": "controller",
+        "endpoint": "fancontroller/setUiConfig"
+      },
+      "content": [
+        {
+          "id": "enabled",
+          "element": "switch",
+          "label": "Enable Fan Control",
+          "value": false,
+          "onClick": {
+            "type": "controller",
+            "endpoint": "fancontroller/setUiConfig"
+          }
+        },
+        {
+          "id": "gpio_pin",
+          "element": "input",
+          "label": "GPIO Pin Number",
+          "type": "number",
+          "attributes": {
+            "min": 14,
+            "max": 14,
+            "readonly": true
+          },
+          "value": 14,
+          "description": "FIXED: GPIO 14 = Physical Pin 8 on Raspberry Pi (BCM numbering)"
+        },
+        {
+          "id": "min_temp",
+          "element": "input",
+          "label": "Minimum Temperature (°C)",
+          "type": "number",
+          "attributes": {
+            "min": 15,
+            "max": 40
+          },
+          "value": 20,
+          "description": "Fan starts cooling at 20°C - Optimized for Raspberry Pi"
+        },
+        {
+          "id": "max_temp",
+          "element": "input",
+          "label": "Maximum Temperature (°C)",
+          "type": "number",
+          "attributes": {
+            "min": 30,
+            "max": 70
+          },
+          "value": 50,
+          "description": "Fan runs at full speed at 50°C"
+        },
+        {
+          "id": "check_interval",
+          "element": "input",
+          "label": "Check Interval (seconds)",
+          "type": "number",
+          "attributes": {
+            "min": 5,
+            "max": 60
+          },
+          "value": 10,
+          "description": "How often to check temperature (5-60 seconds)"
+        },
+        {
+          "id": "use_pwm",
+          "element": "switch",
+          "label": "Enable PWM Speed Control",
+          "value": false,
+          "description": "EXPERIMENTAL: Use PWM for variable speed control"
+        }
+      ]
+    },
+    {
+      "id": "manual_section",
+      "element": "section",
+      "label": "Manual Control",
+      "icon": "fa fa-sliders",
+      "content": [
+        {
+          "id": "fan_speed",
+          "element": "slider",
+          "label": "Fan Speed (%)",
+          "min": 0,
+          "max": 100,
+          "step": 10,
+          "value": 0,
+          "attributes": {
+            "showValue": true
+          },
+          "onChange": {
+            "type": "controller",
+            "endpoint": "fancontroller/setFanSpeed"
+          },
+          "description": "Manual fan speed control (overrides automatic control)"
+        }
+      ]
+    },
+    {
+      "id": "status_section",
+      "element": "section",
+      "label": "System Status - Raspberry Pi",
+      "icon": "fa fa-info-circle",
+      "content": [
+        {
+          "id": "current_temp",
+          "element": "display",
+          "label": "Current Temperature",
+          "value": "Unknown"
+        },
+        {
+          "id": "current_speed",
+          "element": "display",
+          "label": "Current Fan Speed",
+          "value": "0%"
+        },
+        {
+          "id": "gpio_info",
+          "element": "display",
+          "label": "GPIO Configuration",
+          "value": "GPIO 14 - Physical Pin 8 (BCM)"
+        },
+        {
+          "id": "connection_info",
+          "element": "display",
+          "label": "Connection Guide",
+          "value": "Fan+: Pin 8, Fan-: Pin 9(GND)"
+        },
+        {
+          "id": "cooling_info",
+          "element": "display",
+          "label": "Cooling Strategy",
+          "value": "Starts at 20°C - Full speed at 50°C"
+        }
+      ]
+    },
+    {
+      "id": "compatibility_section",
+      "element": "section",
+      "label": "Compatibility Information",
+      "icon": "fa fa-check-circle",
+      "content": [
+        {
+          "id": "compatibility_info",
+          "element": "display",
+          "label": "Plugin Type",
+          "value": "system_controller (No hardware conflicts)"
+        },
+        {
+          "id": "conflict_check",
+          "element": "display",
+          "label": "Conflict Status",
+          "value": "No known conflicts detected"
+        },
+        {
+          "id": "gpio_safety",
+          "element": "display",
+          "label": "GPIO Safety",
+          "value": "GPIO 14 (Pin 8) is safe for Raspberry Pi"
+        },
+        {
+          "id": "temperature_info",
+          "element": "display",
+          "label": "Temperature Range",
+          "value": "Active cooling: 20°C to 50°C"
+        }
+      ]
+    }
+  ]
+}

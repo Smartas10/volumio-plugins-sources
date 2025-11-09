@@ -1,0 +1,34 @@
+{
+  "name": "fancontroller-raspberry-pi",
+  "version": "2.0.1",
+  "description": "Fan Controller for Raspberry Pi - GPIO 14 (Pin 8) - Starts at 20°C",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Smartas10",
+  "license": "MIT",
+  "volumio_info": {
+    "prettyName": "Fan Controller - Raspberry Pi",
+    "icon": "fa fa-thermometer-half",
+    "plugin_type": "system_controller",
+    "boot_priority": 15,
+    "architectures": [
+      "arm",
+      "armv7",
+      "armv8"
+    ],
+    "website": "https://github.com/Smartas10/RaspberryPi-FanController",
+    "details": "Fan controller for Raspberry Pi using GPIO 14 (Pin 8) - Starts cooling at 20°C",
+    "version": "2.0.1",
+    "changelog": "Fan starts at 20°C for better cooling"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "volumio": ">=3.0.0"
+  },
+  "dependencies": {
+    "kew": "^0.7.0",
+    "v-conf": "^1.4.0"
+  }
+}
