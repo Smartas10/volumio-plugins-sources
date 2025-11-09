@@ -1,7 +1,7 @@
 {
-  "name": "fancontroller",
-  "version": "1.0.2",
-  "description": "Fan Controller for Orange Pi PC - GPIO 71 (Pin 12) - No conflict with buttons",
+  "name": "fancontroller-orange-pi-pc",
+  "version": "2.0.0",
+  "description": "Safe Fan Controller for Orange Pi PC - GPIO 228 (Pin 8) - No conflicts with Volumio",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,30 +10,28 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Smartas10/FanController"
+    "url": "https://github.com/Smartas10/OrangePi-FanController"
   },
   "volumio_info": {
     "prettyName": "Fan Controller - Orange Pi PC",
     "icon": "fa fa-thermometer-half",
-    "plugin_type": "system_hardware",
-    "boot_priority": 10,
+    "plugin_type": "system_controller",
+    "boot_priority": 15,
     "architectures": [
       "arm",
       "armv7",
       "armv8"
     ],
-    "website": "https://github.com/Smartas10/FanController",
-    "details": "Fan controller for Orange Pi PC using GPIO 71 (Pin 12) - No conflict with buttons on Pins 7,8,9",
-    "version": "1.0.2",
-    "changelog": "Fixed GPIO 71 (Pin 12) - No conflict with buttons"
+    "website": "https://github.com/Smartas10/OrangePi-FanController",
+    "details": "Safe fan controller for Orange Pi PC using GPIO 228 (Pin 8) - No conflicts with other plugins",
+    "version": "2.0.0",
+    "changelog": "Fixed all conflicts, using GPIO 228 (Pin 8), improved compatibility"
   },
   "engines": {
-    "node": ">=12.0.0",
+    "node": ">=14.0.0",
     "volumio": ">=3.0.0"
   },
   "dependencies": {
-    "fs": "0.0.1-security",
-    "child_process": "^1.0.2",
     "kew": "^0.7.0",
     "v-conf": "^1.4.0"
   }

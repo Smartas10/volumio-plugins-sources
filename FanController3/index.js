@@ -13,6 +13,13 @@ function FanController(context) {
     self.commandRouter = self.context.coreCommand;
     self.logger = self.context.logger;
     self.configManager = self.context.configManager;
+    
+    // GPIO configuration for Orange Pi PC - Pin 8
+    self.GPIO_PIN = 228;  // Physical Pin 8 on Orange Pi PC
+    self.GPIO_BASE_PATH = '/sys/class/gpio';
+    
+    self.fanInterval = null;
+    self.isInitialized = false;
 }
 
 FanController.prototype.onVolumioStart = function() {
@@ -20,15 +27,19 @@ FanController.prototype.onVolumioStart = function() {
     self.configFile = self.commandRouter.pluginManager.getConfigurationFile(self.context, 'config.json');
     
     return self.loadConfig().then(function() {
-        self.logger.info('FanController: Plugin started for Orange Pi PC - Using GPIO 71 (Pin 12)');
+        self.logger.info('FanController: Plugin started for Orange Pi PC - Using GPIO ' + self.GPIO_PIN + ' (Pin 8)');
         self.startFanControl();
+        self.isInitialized = true;
+    }).fail(function(error) {
+        self.logger.error('FanController: Error during startup: ' + error);
     });
 };
 
 FanController.prototype.onVolumioShutdown = function() {
     var self = this;
     self.stopFanControl();
-    self.logger.info('FanController: Plugin stopped');
+    self.cleanupGPIO();
+    self.logger.info('FanController: Plugin stopped - GPIO cleaned up');
 };
 
 FanController.prototype.getConfigurationFiles = function() {
@@ -44,14 +55,16 @@ FanController.prototype.loadConfig = function() {
                 self.config = new (require('v-conf'))();
                 self.config.load(JSON.parse(data));
                 self.setupDefaults();
+                self.logger.info('FanController: Configuration loaded successfully');
             } catch (e) {
-                self.logger.error('FanController: Error loading config: ' + e);
+                self.logger.error('FanController: Error loading config, using defaults: ' + e);
                 self.setupDefaults();
             }
         })
         .fail(function(err) {
-            self.logger.error('FanController: Could not load config, using defaults: ' + err);
+            self.logger.error('FanController: Could not load config file, using defaults: ' + err);
             self.setupDefaults();
+            return self.saveConfig();
         });
 };
 
@@ -61,7 +74,7 @@ FanController.prototype.saveConfig = function() {
     
     return libQ.nfcall(fs.writeFile, self.configFile, configJson, 'utf8')
         .then(function() {
-            self.logger.info('FanController: Configuration saved');
+            self.logger.debug('FanController: Configuration saved');
         })
         .fail(function(err) {
             self.logger.error('FanController: Could not save config: ' + err);
@@ -71,24 +84,20 @@ FanController.prototype.saveConfig = function() {
 FanController.prototype.setupDefaults = function() {
     var self = this;
     
-    if (!self.config.has('enabled')) {
-        self.config.set('enabled', false);
-    }
-    if (!self.config.has('gpio_pin')) {
-        // GPIO 71 - Физический пин 12 (свободен на Orange Pi PC)
-        self.config.set('gpio_pin', 71); 
-    }
-    if (!self.config.has('min_temp')) {
-        self.config.set('min_temp', 40);
-    }
-    if (!self.config.has('max_temp')) {
-        self.config.set('max_temp', 60);
-    }
-    if (!self.config.has('check_interval')) {
-        self.config.set('check_interval', 10);
-    }
-    if (!self.config.has('fan_speed')) {
-        self.config.set('fan_speed', 0);
+    var defaults = {
+        'enabled': false,
+        'gpio_pin': self.GPIO_PIN,  // Fixed to GPIO 228 (Pin 8)
+        'min_temp': 45,
+        'max_temp': 65,
+        'check_interval': 10,
+        'fan_speed': 0,
+        'use_pwm': false
+    };
+    
+    for (var key in defaults) {
+        if (!self.config.has(key)) {
+            self.config.set(key, defaults[key]);
+        }
     }
 };
 
@@ -105,19 +114,24 @@ FanController.prototype.getUIConfig = function() {
             "min_temp": self.config.get('min_temp'),
             "max_temp": self.config.get('max_temp'),
             "check_interval": self.config.get('check_interval'),
-            "fan_speed": self.config.get('fan_speed')
+            "fan_speed": self.config.get('fan_speed'),
+            "use_pwm": self.config.get('use_pwm')
         };
         
         self.commandRouter.i18nJson(__dirname + '/i18n/strings_' + langCode + '.json',
             __dirname + '/UIConfig.json')
         .then(function(uiconf) {
-            // Заполняем значения в UI конфиге
+            // Fill UI configuration with current values
             uiconf.sections[0].content[0].value = config.enabled;
             uiconf.sections[0].content[1].value = config.gpio_pin;
             uiconf.sections[0].content[2].value = config.min_temp;
             uiconf.sections[0].content[3].value = config.max_temp;
             uiconf.sections[0].content[4].value = config.check_interval;
+            uiconf.sections[0].content[5].value = config.use_pwm;
             uiconf.sections[1].content[0].value = config.fan_speed;
+            
+            // Update status section with real-time data
+            self.updateStatusDisplay(uiconf);
             
             defer.resolve(uiconf);
         })
@@ -130,6 +144,20 @@ FanController.prototype.getUIConfig = function() {
     return defer.promise;
 };
 
+FanController.prototype.updateStatusDisplay = function(uiconf) {
+    var self = this;
+    
+    // Get current temperature
+    self.getSystemTemperature().then(function(temp) {
+        uiconf.sections[2].content[0].value = temp.toFixed(1) + '°C';
+        uiconf.sections[2].content[1].value = self.config.get('fan_speed') + '%';
+        uiconf.sections[2].content[2].value = 'GPIO ' + self.GPIO_PIN + ' - Physical Pin 8 (SAFE)';
+        uiconf.sections[2].content[3].value = 'Fan+: Pin 8, Fan-: Pin 9(GND)';
+    }).fail(function() {
+        uiconf.sections[2].content[0].value = 'Error reading temperature';
+    });
+};
+
 FanController.prototype.updateUIConfig = function() {
     var self = this;
     self.commandRouter.broadcastMessage('pushUiConfig', self.getUIConfig());
@@ -138,27 +166,50 @@ FanController.prototype.updateUIConfig = function() {
 FanController.prototype.setUIConfig = function(data) {
     var self = this;
     
+    // Validate input data
+    var minTemp = parseInt(data.min_temp);
+    var maxTemp = parseInt(data.max_temp);
+    var interval = parseInt(data.check_interval);
+    
+    if (minTemp >= maxTemp) {
+        self.logger.error('FanController: min_temp must be less than max_temp');
+        return libQ.reject(new Error('Minimum temperature must be less than maximum temperature'));
+    }
+    
+    if (interval < 5 || interval > 60) {
+        self.logger.error('FanController: check_interval must be between 5 and 60 seconds');
+        return libQ.reject(new Error('Check interval must be between 5 and 60 seconds'));
+    }
+    
     self.config.set('enabled', data.enabled);
-    self.config.set('gpio_pin', parseInt(data.gpio_pin));
-    self.config.set('min_temp', parseInt(data.min_temp));
-    self.config.set('max_temp', parseInt(data.max_temp));
-    self.config.set('check_interval', parseInt(data.check_interval));
+    self.config.set('min_temp', minTemp);
+    self.config.set('max_temp', maxTemp);
+    self.config.set('check_interval', interval);
+    self.config.set('use_pwm', data.use_pwm);
     
     return self.saveConfig().then(function() {
         self.restartFanControl();
         self.updateUIConfig();
+        self.logger.info('FanController: Configuration updated');
     });
 };
 
 FanController.prototype.setFanSpeed = function(speed) {
     var self = this;
+    speed = parseInt(speed);
     
-    self.config.set('fan_speed', parseInt(speed));
+    if (speed < 0 || speed > 100) {
+        self.logger.error('FanController: Fan speed must be between 0 and 100');
+        return libQ.reject(new Error('Fan speed must be between 0 and 100'));
+    }
+    
+    self.config.set('fan_speed', speed);
     return self.saveConfig().then(function() {
         if (self.config.get('enabled')) {
             self.applyFanSpeed(speed);
         }
         self.updateUIConfig();
+        self.logger.info('FanController: Manual fan speed set to ' + speed + '%');
     });
 };
 
@@ -166,129 +217,167 @@ FanController.prototype.getSystemTemperature = function() {
     var self = this;
     var defer = libQ.defer();
     
-    // Для Orange Pi используем правильную команду для чтения температуры
-    exec('cat /sys/class/thermal/thermal_zone0/temp', function(error, stdout, stderr) {
-        if (error) {
-            // Fallback для Orange Pi
-            exec('cat /sys/devices/virtual/thermal/thermal_zone0/temp', function(error2, stdout2, stderr2) {
-                if (error2) {
-                    self.logger.error('FanController: Error reading temperature from Orange Pi: ' + error2);
+    // Try multiple temperature sources for Orange Pi compatibility
+    var tempSources = [
+        '/sys/class/thermal/thermal_zone0/temp',
+        '/sys/devices/virtual/thermal/thermal_zone0/temp',
+        '/sys/class/sunxi_temperture/temperture'
+    ];
+    
+    var tryNextSource = function(index) {
+        if (index >= tempSources.length) {
+            // All sources failed, try vcgencmd as last resort
+            exec('vcgencmd measure_temp', function(error, stdout) {
+                if (error) {
+                    self.logger.error('FanController: All temperature sources failed');
                     defer.resolve(0);
                 } else {
-                    var temp = parseInt(stdout2) / 1000;
-                    defer.resolve(temp);
+                    var tempMatch = stdout.match(/temp=([0-9.]+)'C/);
+                    if (tempMatch) {
+                        defer.resolve(parseFloat(tempMatch[1]));
+                    } else {
+                        defer.resolve(0);
+                    }
                 }
             });
-        } else {
-            var temp = parseInt(stdout) / 1000;
-            defer.resolve(temp);
+            return;
         }
-    });
+        
+        var source = tempSources[index];
+        exec('cat ' + source, function(error, stdout) {
+            if (error) {
+                tryNextSource(index + 1);
+            } else {
+                var temp = parseInt(stdout);
+                if (temp > 1000) { // Assume millidegrees
+                    temp = temp / 1000;
+                }
+                if (temp > 0 && temp < 100) { // Reasonable temperature range
+                    defer.resolve(temp);
+                } else {
+                    tryNextSource(index + 1);
+                }
+            }
+        });
+    };
+    
+    tryNextSource(0);
     
     return defer.promise;
 };
 
 FanController.prototype.setupGPIO = function() {
     var self = this;
-    var gpioPin = self.config.get('gpio_pin');
+    var defer = libQ.defer();
     
-    self.logger.info('FanController: Setting up GPIO ' + gpioPin + ' (Physical Pin 12) for Orange Pi PC');
+    self.logger.info('FanController: Setting up GPIO ' + self.GPIO_PIN + ' (Physical Pin 8)');
     
-    // Для Orange Pi используем правильный путь к GPIO
-    var gpioBase = gpioPin;
-    
-    // Сначала пытаемся unexport если уже занят
-    exec('echo ' + gpioBase + ' > /sys/class/gpio/unexport', function(error) {
-        // Игнорируем ошибки unexport
+    // Cleanup existing GPIO
+    exec('echo ' + self.GPIO_PIN + ' > ' + self.GPIO_BASE_PATH + '/unexport', function(error) {
+        // Ignore errors - GPIO might not be exported
     });
     
-    // Даем время
+    // Wait before export
     setTimeout(function() {
-        // Экспорт GPIO пина
-        exec('echo ' + gpioBase + ' > /sys/class/gpio/export', function(error) {
+        // Export GPIO pin
+        exec('echo ' + self.GPIO_PIN + ' > ' + self.GPIO_BASE_PATH + '/export', function(error) {
             if (error) {
-                self.logger.debug('FanController: GPIO ' + gpioPin + ' already exported: ' + error);
+                self.logger.debug('FanController: GPIO ' + self.GPIO_PIN + ' already exported or busy');
             }
             
-            // Установка направления
+            // Wait for GPIO to be available
             setTimeout(function() {
-                exec('echo out > /sys/class/gpio/gpio' + gpioBase + '/direction', function(error) {
+                var gpioPath = self.GPIO_BASE_PATH + '/gpio' + self.GPIO_PIN;
+                
+                // Set direction to output
+                exec('echo out > ' + gpioPath + '/direction', function(error) {
                     if (error) {
                         self.logger.error('FanController: Error setting GPIO direction: ' + error);
+                        defer.reject(error);
                     } else {
-                        self.logger.info('FanController: GPIO ' + gpioPin + ' (Pin 12) configured successfully');
-                        // Изначально выключаем вентилятор
-                        exec('echo 0 > /sys/class/gpio/gpio' + gpioBase + '/value');
+                        // Initialize fan to off
+                        exec('echo 0 > ' + gpioPath + '/value', function(error) {
+                            if (error) {
+                                self.logger.error('FanController: Error initializing fan state: ' + error);
+                                defer.reject(error);
+                            } else {
+                                self.logger.info('FanController: GPIO ' + self.GPIO_PIN + ' (Pin 8) configured successfully');
+                                defer.resolve();
+                            }
+                        });
                     }
                 });
-            }, 200);
+            }, 500);
         });
-    }, 100);
+    }, 500);
+    
+    return defer.promise;
 };
 
 FanController.prototype.applyFanSpeed = function(speed) {
     var self = this;
-    var gpioPin = self.config.get('gpio_pin');
-    var gpioBase = gpioPin;
+    var gpioPath = self.GPIO_BASE_PATH + '/gpio' + self.GPIO_PIN;
     
-    if (speed > 0) {
-        exec('echo 1 > /sys/class/gpio/gpio' + gpioBase + '/value', function(error) {
-            if (error) {
-                self.logger.error('FanController: Error turning fan ON: ' + error);
-            } else {
-                self.logger.debug('FanController: Fan turned ON (Speed: ' + speed + '%) - GPIO 71, Pin 12');
-            }
-        });
-    } else {
-        exec('echo 0 > /sys/class/gpio/gpio' + gpioBase + '/value', function(error) {
-            if (error) {
-                self.logger.error('FanController: Error turning fan OFF: ' + error);
-            } else {
-                self.logger.debug('FanController: Fan turned OFF - GPIO 71, Pin 12');
-            }
-        });
-    }
+    // For simple on/off control (PWM not implemented in this version)
+    var value = speed > 0 ? 1 : 0;
+    
+    exec('echo ' + value + ' > ' + gpioPath + '/value', function(error) {
+        if (error) {
+            self.logger.error('FanController: Error setting fan speed: ' + error);
+        } else {
+            self.logger.debug('FanController: Fan ' + (value ? 'ON' : 'OFF') + ' (Speed: ' + speed + '%) - GPIO ' + self.GPIO_PIN);
+        }
+    });
 };
 
 FanController.prototype.startFanControl = function() {
     var self = this;
     
+    // Clear existing interval
     if (self.fanInterval) {
         clearInterval(self.fanInterval);
+        self.fanInterval = null;
     }
     
     if (self.config.get('enabled')) {
-        self.logger.info('FanController: Starting fan control for Orange Pi PC - GPIO 71, Pin 12');
-        self.setupGPIO();
+        self.logger.info('FanController: Starting fan control for Orange Pi PC');
         
-        // Даем время на инициализацию GPIO
-        setTimeout(function() {
+        self.setupGPIO().then(function() {
+            // Start temperature monitoring
             self.fanInterval = setInterval(function() {
                 self.getSystemTemperature().then(function(temp) {
                     var minTemp = self.config.get('min_temp');
                     var maxTemp = self.config.get('max_temp');
+                    var currentSpeed = self.config.get('fan_speed');
                     
+                    var newSpeed;
                     if (temp >= maxTemp) {
-                        // Максимальная температура - включаем вентилятор
-                        self.applyFanSpeed(100);
-                        self.config.set('fan_speed', 100);
+                        newSpeed = 100; // Full speed at max temp
                     } else if (temp >= minTemp) {
-                        // Промежуточная температура - линейная интерполяция
-                        var speed = Math.round(((temp - minTemp) / (maxTemp - minTemp)) * 100);
-                        self.applyFanSpeed(speed);
-                        self.config.set('fan_speed', speed);
+                        // Linear interpolation between min and max temp
+                        newSpeed = Math.round(((temp - minTemp) / (maxTemp - minTemp)) * 100);
+                        newSpeed = Math.max(0, Math.min(100, newSpeed)); // Clamp to 0-100
                     } else {
-                        // Температура ниже минимальной - выключаем
-                        self.applyFanSpeed(0);
-                        self.config.set('fan_speed', 0);
+                        newSpeed = 0; // Off below min temp
                     }
                     
-                    self.logger.debug('FanController: Orange Pi PC Temp: ' + temp + '°C, Speed: ' + self.config.get('fan_speed') + '%, GPIO 71/Pin 12');
+                    // Only apply if speed changed
+                    if (newSpeed !== currentSpeed) {
+                        self.applyFanSpeed(newSpeed);
+                        self.config.set('fan_speed', newSpeed);
+                        self.logger.info('FanController: Temp ' + temp.toFixed(1) + '°C → Speed ' + newSpeed + '%, GPIO ' + self.GPIO_PIN);
+                    }
+                }).fail(function(error) {
+                    self.logger.error('FanController: Error reading temperature: ' + error);
                 });
             }, self.config.get('check_interval') * 1000);
-        }, 1000);
-        
-        self.logger.info('FanController: Fan control started for Orange Pi PC - GPIO 71, Pin 12');
+            
+            self.logger.info('FanController: Fan control started - Monitoring every ' + self.config.get('check_interval') + 's');
+        }).fail(function(error) {
+            self.logger.error('FanController: Failed to start fan control - GPIO setup failed: ' + error);
+        });
+    } else {
+        self.logger.info('FanController: Fan control disabled in configuration');
     }
 };
 
@@ -298,17 +387,35 @@ FanController.prototype.stopFanControl = function() {
     if (self.fanInterval) {
         clearInterval(self.fanInterval);
         self.fanInterval = null;
+        self.logger.info('FanController: Fan control stopped');
     }
     
-    // Выключаем вентилятор
+    // Turn fan off
     self.applyFanSpeed(0);
-    self.logger.info('FanController: Fan control stopped - GPIO 71, Pin 12');
+};
+
+FanController.prototype.cleanupGPIO = function() {
+    var self = this;
+    
+    // Turn fan off
+    self.applyFanSpeed(0);
+    
+    // Unexport GPIO
+    setTimeout(function() {
+        exec('echo ' + self.GPIO_PIN + ' > ' + self.GPIO_BASE_PATH + '/unexport', function(error) {
+            if (!error) {
+                self.logger.info('FanController: GPIO ' + self.GPIO_PIN + ' unexported');
+            }
+        });
+    }, 1000);
 };
 
 FanController.prototype.restartFanControl = function() {
     var self = this;
     self.stopFanControl();
-    self.startFanControl();
+    setTimeout(function() {
+        self.startFanControl();
+    }, 1000);
 };
 
 FanController.prototype.loadI18nStrings = function(langCode) {
@@ -332,9 +439,11 @@ FanController.prototype.loadI18nStrings = function(langCode) {
     return defer.promise;
 };
 
-// Обязательные методы плагина
+// Required plugin methods
 FanController.prototype.onStop = function() {
     this.stopFanControl();
+    this.cleanupGPIO();
+    this.logger.info('FanController: Plugin stopped');
 };
 
 FanController.prototype.onStart = function() {
@@ -346,11 +455,23 @@ FanController.prototype.onRestart = function() {
 };
 
 FanController.prototype.onInstall = function() {
-    // Дополнительные действия при установке
+    this.logger.info('FanController: Plugin installed');
+    return libQ.resolve();
 };
 
 FanController.prototype.onUninstall = function() {
-    // Дополнительные действия при удалении
+    var self = this;
+    self.logger.info('FanController: Uninstalling plugin...');
+    
+    self.stopFanControl();
+    self.cleanupGPIO();
+    
+    // Additional cleanup
+    setTimeout(function() {
+        self.logger.info('FanController: Plugin uninstallation complete');
+    }, 2000);
+    
+    return libQ.resolve();
 };
 
 FanController.prototype.getConf = function(varName) {
