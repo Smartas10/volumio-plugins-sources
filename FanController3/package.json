@@ -1,0 +1,40 @@
+{
+  "name": "fancontroller",
+  "version": "1.0.2",
+  "description": "Fan Controller for Orange Pi PC - GPIO 71 (Pin 12) - No conflict with buttons",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Smartas10",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Smartas10/FanController"
+  },
+  "volumio_info": {
+    "prettyName": "Fan Controller - Orange Pi PC",
+    "icon": "fa fa-thermometer-half",
+    "plugin_type": "system_hardware",
+    "boot_priority": 10,
+    "architectures": [
+      "arm",
+      "armv7",
+      "armv8"
+    ],
+    "website": "https://github.com/Smartas10/FanController",
+    "details": "Fan controller for Orange Pi PC using GPIO 71 (Pin 12) - No conflict with buttons on Pins 7,8,9",
+    "version": "1.0.2",
+    "changelog": "Fixed GPIO 71 (Pin 12) - No conflict with buttons"
+  },
+  "engines": {
+    "node": ">=12.0.0",
+    "volumio": ">=3.0.0"
+  },
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "child_process": "^1.0.2",
+    "kew": "^0.7.0",
+    "v-conf": "^1.4.0"
+  }
+}
