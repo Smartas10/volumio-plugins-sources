@@ -2,11 +2,11 @@
 
 echo "================================================"
 echo "FanController installation for Orange Pi PC"
-echo "GPIO 228 - Physical Pin 8 (SAFE - No Conflicts)"
+echo "GPIO 102 - Physical Pin 8 (CORRECT GPIO)"
 echo "================================================"
 
 # Проверка системы
-echo "Checking system compatibility..."
+echo "Checking Orange Pi PC compatibility..."
 if [ ! -f "/etc/orangepi-release" ] && [ ! -f "/etc/armbian-release" ]; then
     echo "WARNING: This plugin is designed for Orange Pi/Armbian systems"
 fi
@@ -47,19 +47,19 @@ else
     fi
 fi
 
-# Проверка занятости GPIO 228
-echo "Checking GPIO 228 availability..."
-if [ -d "/sys/class/gpio/gpio228" ]; then
-    echo "WARNING: GPIO 228 is already exported. Checking if it's in use..."
-    if [ -f "/sys/class/gpio/gpio228/direction" ]; then
-        DIRECTION=$(cat /sys/class/gpio/gpio228/direction 2>/dev/null || echo "unknown")
-        echo "GPIO 228 direction: $DIRECTION"
+# Проверка занятости GPIO 102
+echo "Checking GPIO 102 availability..."
+if [ -d "/sys/class/gpio/gpio102" ]; then
+    echo "WARNING: GPIO 102 is already exported. Checking if it's in use..."
+    if [ -f "/sys/class/gpio/gpio102/direction" ]; then
+        DIRECTION=$(cat /sys/class/gpio/gpio102/direction 2>/dev/null || echo "unknown")
+        echo "GPIO 102 direction: $DIRECTION"
         if [ "$DIRECTION" == "in" ] || [ "$DIRECTION" == "out" ]; then
-            echo "WARNING: GPIO 228 appears to be in use. There may be conflicts."
+            echo "WARNING: GPIO 102 appears to be in use. There may be conflicts."
         fi
     fi
 else
-    echo "GPIO 228: Available"
+    echo "GPIO 102: Available"
 fi
 
 # Проверка конфликтов с другими плагинами
@@ -102,12 +102,12 @@ echo ""
 echo "================================================"
 echo "INSTALLATION COMPLETE"
 echo "================================================"
-echo "CONNECTION GUIDE:"
-echo "  Fan (+) → Physical Pin 8 (GPIO 228)"
+echo "CONNECTION GUIDE for Orange Pi PC:"
+echo "  Fan (+) → Physical Pin 8 (GPIO 102)"
 echo "  Fan (-) → Physical Pin 9 (GND)"
 echo ""
 echo "IMPORTANT:"
-echo "  • GPIO 228 (Pin 8) is safe and conflict-free"
+echo "  • GPIO 102 (Pin 8) is correct for Orange Pi PC"
 echo "  • Plugin type: system_controller (no hardware conflicts)"
 echo "  • Compatible with Orange Pi PC"
 echo "================================================"

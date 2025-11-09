@@ -2,7 +2,7 @@
   "page": {
     "label": "Fan Controller - Orange Pi PC",
     "title": "Fan Controller",
-    "description": "Safe fan control on GPIO 228 (Physical Pin 8) - No conflicts with other plugins"
+    "description": "Correct GPIO mapping: Pin 8 = GPIO 102 on Orange Pi PC"
   },
   "sections": [
     {
@@ -31,12 +31,12 @@
           "label": "GPIO Pin Number",
           "type": "number",
           "attributes": {
-            "min": 228,
-            "max": 228,
+            "min": 102,
+            "max": 102,
             "readonly": true
           },
-          "value": 228,
-          "description": "FIXED: GPIO 228 = Physical Pin 8 (SAFE - No conflicts with other plugins)"
+          "value": 102,
+          "description": "FIXED: GPIO 102 = Physical Pin 8 on Orange Pi PC"
         },
         {
           "id": "min_temp",
@@ -130,7 +130,7 @@
           "id": "gpio_info",
           "element": "display",
           "label": "GPIO Configuration",
-          "value": "GPIO 228 - Physical Pin 8 (SAFE)"
+          "value": "GPIO 102 - Physical Pin 8 (CORRECT)"
         },
         {
           "id": "connection_info",
@@ -162,7 +162,7 @@
           "id": "gpio_safety",
           "element": "display",
           "label": "GPIO Safety",
-          "value": "GPIO 228 (Pin 8) is safe and conflict-free"
+          "value": "GPIO 102 (Pin 8) is correct for Orange Pi PC"
         }
       ]
     }

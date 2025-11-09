@@ -14,8 +14,8 @@ function FanController(context) {
     self.logger = self.context.logger;
     self.configManager = self.context.configManager;
     
-    // GPIO configuration for Orange Pi PC - Pin 8
-    self.GPIO_PIN = 228;  // Physical Pin 8 on Orange Pi PC
+    // CORRECT GPIO for Orange Pi PC - Pin 8 = GPIO 102
+    self.GPIO_PIN = 102;  // Physical Pin 8 on Orange Pi PC = GPIO6 = Linux GPIO 102
     self.GPIO_BASE_PATH = '/sys/class/gpio';
     
     self.fanInterval = null;
@@ -86,7 +86,7 @@ FanController.prototype.setupDefaults = function() {
     
     var defaults = {
         'enabled': false,
-        'gpio_pin': self.GPIO_PIN,  // Fixed to GPIO 228 (Pin 8)
+        'gpio_pin': self.GPIO_PIN,  // Fixed to GPIO 102 (Pin 8)
         'min_temp': 45,
         'max_temp': 65,
         'check_interval': 10,
@@ -151,7 +151,7 @@ FanController.prototype.updateStatusDisplay = function(uiconf) {
     self.getSystemTemperature().then(function(temp) {
         uiconf.sections[2].content[0].value = temp.toFixed(1) + '°C';
         uiconf.sections[2].content[1].value = self.config.get('fan_speed') + '%';
-        uiconf.sections[2].content[2].value = 'GPIO ' + self.GPIO_PIN + ' - Physical Pin 8 (SAFE)';
+        uiconf.sections[2].content[2].value = 'GPIO ' + self.GPIO_PIN + ' - Physical Pin 8 (CORRECT)';
         uiconf.sections[2].content[3].value = 'Fan+: Pin 8, Fan-: Pin 9(GND)';
     }).fail(function() {
         uiconf.sections[2].content[0].value = 'Error reading temperature';

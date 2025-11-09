@@ -20,15 +20,15 @@ systemctl stop fancontroller-orange-pi > /dev/null 2>&1 || true
 echo "Waiting for plugin to stop..."
 sleep 5
 
-# Очистка GPIO 228
-echo "Cleaning up GPIO 228..."
-if [ -d "/sys/class/gpio/gpio228" ]; then
-    echo "0" > /sys/class/gpio/gpio228/value 2>/dev/null || true
+# Очистка GPIO 102
+echo "Cleaning up GPIO 102..."
+if [ -d "/sys/class/gpio/gpio102" ]; then
+    echo "0" > /sys/class/gpio/gpio102/value 2>/dev/null || true
     sleep 1
-    echo "228" > /sys/class/gpio/unexport 2>/dev/null || true
-    echo "GPIO 228 cleaned up"
+    echo "102" > /sys/class/gpio/unexport 2>/dev/null || true
+    echo "GPIO 102 cleaned up"
 else
-    echo "GPIO 228 not active"
+    echo "GPIO 102 not active"
 fi
 
 # Удаление директории плагина
@@ -67,7 +67,7 @@ echo ""
 echo "================================================"
 echo "UNINSTALLATION COMPLETE"
 echo "================================================"
-echo "Fan controller using GPIO 228 (Pin 8) completely removed"
+echo "Fan controller using GPIO 102 (Pin 8) completely removed"
 echo "All configuration files and logs have been cleaned up"
 echo "================================================"
 

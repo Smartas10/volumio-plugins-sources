@@ -1,17 +1,13 @@
 {
   "name": "fancontroller-orange-pi-pc",
-  "version": "2.0.0",
-  "description": "Safe Fan Controller for Orange Pi PC - GPIO 228 (Pin 8) - No conflicts with Volumio",
+  "version": "2.0.1",
+  "description": "Fan Controller for Orange Pi PC - GPIO 102 (Pin 8) - Correct GPIO mapping",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Smartas10",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Smartas10/OrangePi-FanController"
-  },
   "volumio_info": {
     "prettyName": "Fan Controller - Orange Pi PC",
     "icon": "fa fa-thermometer-half",
@@ -23,9 +19,9 @@
       "armv8"
     ],
     "website": "https://github.com/Smartas10/OrangePi-FanController",
-    "details": "Safe fan controller for Orange Pi PC using GPIO 228 (Pin 8) - No conflicts with other plugins",
-    "version": "2.0.0",
-    "changelog": "Fixed all conflicts, using GPIO 228 (Pin 8), improved compatibility"
+    "details": "Correct fan controller for Orange Pi PC using GPIO 102 (Pin 8)",
+    "version": "2.0.1",
+    "changelog": "Fixed GPIO mapping: Pin 8 = GPIO 102 on Orange Pi PC"
   },
   "engines": {
     "node": ">=14.0.0",
