@@ -2,7 +2,7 @@
   "page": {
     "label": "Fan Controller - Raspberry Pi",
     "title": "Fan Controller",
-    "description": "Fan control on GPIO 14 (Pin 8) - Starts cooling at 20°C - BCM numbering"
+    "description": "PWM 50Hz control on GPIO 14 (Pin 8) - Temperature based duty cycle - BCM numbering"
   },
   "sections": [
     {
@@ -48,7 +48,7 @@
             "max": 40
           },
           "value": 20,
-          "description": "Fan starts cooling at 20°C - Optimized for Raspberry Pi"
+          "description": "Fan starts at 20°C (0% PWM duty cycle)"
         },
         {
           "id": "max_temp",
@@ -60,7 +60,7 @@
             "max": 70
           },
           "value": 50,
-          "description": "Fan runs at full speed at 50°C"
+          "description": "Full speed at 50°C (100% PWM duty cycle)"
         },
         {
           "id": "check_interval",
@@ -78,8 +78,8 @@
           "id": "use_pwm",
           "element": "switch",
           "label": "Enable PWM Speed Control",
-          "value": false,
-          "description": "EXPERIMENTAL: Use PWM for variable speed control"
+          "value": true,
+          "description": "PWM 50Hz frequency - Variable speed control based on temperature"
         }
       ]
     },
@@ -95,7 +95,7 @@
           "label": "Fan Speed (%)",
           "min": 0,
           "max": 100,
-          "step": 10,
+          "step": 5,
           "value": 0,
           "attributes": {
             "showValue": true
@@ -104,7 +104,7 @@
             "type": "controller",
             "endpoint": "fancontroller/setFanSpeed"
           },
-          "description": "Manual fan speed control (overrides automatic control)"
+          "description": "Manual PWM duty cycle control (overrides automatic control)"
         }
       ]
     },
@@ -124,7 +124,7 @@
           "id": "current_speed",
           "element": "display",
           "label": "Current Fan Speed",
-          "value": "0%"
+          "value": "0% (PWM)"
         },
         {
           "id": "gpio_info",
@@ -139,10 +139,10 @@
           "value": "Fan+: Pin 8, Fan-: Pin 9(GND)"
         },
         {
-          "id": "cooling_info",
+          "id": "pwm_info",
           "element": "display",
-          "label": "Cooling Strategy",
-          "value": "Starts at 20°C - Full speed at 50°C"
+          "label": "PWM Mode",
+          "value": "PWM 50Hz - Hardware PWM"
         }
       ]
     },
@@ -173,8 +173,8 @@
         {
           "id": "temperature_info",
           "element": "display",
-          "label": "Temperature Range",
-          "value": "Active cooling: 20°C to 50°C"
+          "label": "PWM Temperature Range",
+          "value": "20°C (0%) to 50°C (100%) duty cycle"
         }
       ]
     }

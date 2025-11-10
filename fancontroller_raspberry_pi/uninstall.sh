@@ -31,6 +31,10 @@ else
     echo "GPIO 14 not active"
 fi
 
+# Очистка PWM
+echo "Cleaning up PWM..."
+gpio unexport 14 2>/dev/null || true
+
 # Удаление директории плагина
 echo "Removing plugin directory..."
 if [ -d "$PLUGIN_DIR" ]; then
@@ -68,6 +72,7 @@ echo "================================================"
 echo "UNINSTALLATION COMPLETE"
 echo "================================================"
 echo "Fan controller using GPIO 14 (Pin 8) completely removed"
+echo "PWM control stopped and GPIO cleaned up"
 echo "All configuration files and logs have been cleaned up"
 echo "================================================"
 

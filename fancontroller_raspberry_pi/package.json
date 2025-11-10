@@ -1,7 +1,7 @@
 {
   "name": "fancontroller-raspberry-pi",
-  "version": "2.0.1",
-  "description": "Fan Controller for Raspberry Pi - GPIO 14 (Pin 8) - Starts at 20°C",
+  "version": "2.1.0",
+  "description": "Fan Controller for Raspberry Pi - GPIO 14 (Pin 8) - PWM 50Hz control",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -19,9 +19,9 @@
       "armv8"
     ],
     "website": "https://github.com/Smartas10/RaspberryPi-FanController",
-    "details": "Fan controller for Raspberry Pi using GPIO 14 (Pin 8) - Starts cooling at 20°C",
-    "version": "2.0.1",
-    "changelog": "Fan starts at 20°C for better cooling"
+    "details": "Fan controller for Raspberry Pi using GPIO 14 (Pin 8) - PWM 50Hz control",
+    "version": "2.1.0",
+    "changelog": "Added PWM 50Hz control with temperature-based duty cycle"
   },
   "engines": {
     "node": ">=14.0.0",

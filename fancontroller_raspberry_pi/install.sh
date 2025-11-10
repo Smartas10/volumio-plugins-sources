@@ -3,7 +3,7 @@
 echo "================================================"
 echo "FanController installation for Raspberry Pi"
 echo "GPIO 14 - Physical Pin 8 (BCM numbering)"
-echo "Starts cooling at 20°C"
+echo "PWM 50Hz - Temperature controlled duty cycle"
 echo "================================================"
 
 # Проверка системы
@@ -61,6 +61,24 @@ else
     echo "GPIO 14: Available"
 fi
 
+# Установка зависимостей для PWM
+echo "Installing PWM dependencies..."
+if command -v gpio >/dev/null 2>&1; then
+    echo "wiringPi already installed"
+else
+    echo "Installing wiringPi for hardware PWM support..."
+    apt-get update
+    apt-get install -y wiringpi
+fi
+
+# Проверка поддержки PWM
+echo "Checking PWM support..."
+if gpio -v >/dev/null 2>&1; then
+    echo "Hardware PWM: Available (wiringPi)"
+else
+    echo "Hardware PWM: Not available, using software PWM"
+fi
+
 # Проверка конфликтов с другими плагинами
 echo "Checking for conflicting plugins..."
 CONFLICTING_PLUGINS=0
@@ -110,16 +128,18 @@ echo "  Pin 8  = GPIO 14 (TXD)"
 echo "  Pin 9  = GND"
 echo "  Pin 10 = GPIO 15 (RXD)"
 echo ""
-echo "COOLING STRATEGY:"
-echo "  • Fan starts at 20°C for proactive cooling"
+echo "PWM COOLING STRATEGY:"
+echo "  • PWM Frequency: 50 Hz"
+echo "  • Fan starts at 20°C (0% duty cycle)"
 echo "  • Linear speed increase from 20°C to 50°C"
-echo "  • Full speed at 50°C for maximum cooling"
-echo "  • Optimized for Raspberry Pi thermal management"
+echo "  • Full speed (100% duty cycle) at 50°C"
+echo "  • Optimized PWM control for quiet operation"
 echo ""
 echo "IMPORTANT:"
 echo "  • Uses BCM GPIO numbering (GPIO 14)"
-echo "  • Safe pin - no conflict with essential functions"
+echo "  • PWM 50Hz signal on Pin 8"
 echo "  • Compatible with all Raspberry Pi models"
+echo "  • Requires 3-wire PWM fan for speed control"
 echo "================================================"
 
 echo "plugininstallend"
