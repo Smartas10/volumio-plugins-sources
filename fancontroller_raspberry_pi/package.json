@@ -1,6 +1,6 @@
 {
   "name": "fancontroller-raspberry-pi",
-  "version": "2.1.0",
+  "version": "2.1.8",
   "description": "Fan Controller for Raspberry Pi - GPIO 14 (Pin 8) - PWM 50Hz control",
   "main": "index.js",
   "scripts": {
@@ -21,7 +21,7 @@
     "website": "https://github.com/Smartas10/RaspberryPi-FanController",
     "details": "Fan controller for Raspberry Pi using GPIO 14 (Pin 8) - PWM 50Hz control",
     "version": "2.1.0",
-    "changelog": "Added PWM 50Hz control with temperature-based duty cycle"
+    "changelog": "Added PWM 50Hz control with temperature-based duty cycle and web interface"
   },
   "engines": {
     "node": ">=14.0.0",

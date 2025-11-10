@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html ng-app="volumio">
+<head>
+    <meta charset="utf-8">
+    <title>Fan Controller - Raspberry Pi</title>
+    <style>
+        .fan-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .status-card {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .control-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .temp-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2196F3;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .speed-display {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .slider-container {
+            margin: 20px 0;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+        }
+        
+        .button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .button:hover {
+            background: #1976D2;
+        }
+        
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .button-danger {
+            background: #f44336;
+        }
+        
+        .button-danger:hover {
+            background: #d32f2f;
+        }
+        
+        .button-success {
+            background: #4CAF50;
+        }
+        
+        .button-success:hover {
+            background: #388E3C;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-on {
+            background: #4CAF50;
+        }
+        
+        .status-off {
+            background: #f44336;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .info-item {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .info-value {
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .alert {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .alert-success {
+            background: #dff0d8;
+            border: 1px solid #d6e9c6;
+            color: #3c763d;
+        }
+        
+        .alert-error {
+            background: #f2dede;
+            border: 1px solid #ebccd1;
+            color: #a94442;
+        }
+    </style>
+</head>
+<body>
+    <div class="fan-container" ng-controller="FanControllerCtrl">
+        <div class="status-card">
+            <h2>Fan Controller - Raspberry Pi</h2>
+            <div class="temp-display">{{temperature}}°C</div>
+            <div class="speed-display">{{fanSpeed}}% PWM</div>
+            
+            <div style="text-align: center; margin: 15px 0;">
+                <span class="status-indicator" ng-class="status.enabled ? 'status-on' : 'status-off'"></span>
+                <strong>{{status.enabled ? 'ACTIVE' : 'DISABLED'}}</strong>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">GPIO Pin</div>
+                    <div class="info-value">GPIO {{status.gpio_pin}} (Pin 8)</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">PWM Mode</div>
+                    <div class="info-value">{{status.use_pwm ? '50Hz PWM' : 'ON/OFF'}}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Temperature Range</div>
+                    <div class="info-value">{{status.min_temp}}°C - {{status.max_temp}}°C</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Check Interval</div>
+                    <div class="info-value">{{status.check_interval}} seconds</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-card">
+            <h3>Fan Control</h3>
+            
+            <div style="text-align: center; margin: 20px 0;">
+                <button class="button button-success" ng-click="enableFan()" ng-disabled="status.enabled">
+                    Enable Auto Control
+                </button>
+                <button class="button button-danger" ng-click="disableFan()" ng-disabled="!status.enabled">
+                    Disable Auto Control
+                </button>
+            </div>
+            
+            <div class="slider-container">
+                <label>Manual Fan Speed: {{manualSpeed}}%</label>
+                <input type="range" class="slider" min="0" max="100" step="5" 
+                       ng-model="manualSpeed" ng-change="setManualSpeed()">
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="button" ng-click="setSpeed(0)">OFF</button>
+                <button class="button" ng-click="setSpeed(25)">25%</button>
+                <button class="button" ng-click="setSpeed(50)">50%</button>
+                <button class="button" ng-click="setSpeed(75)">75%</button>
+                <button class="button" ng-click="setSpeed(100)">100%</button>
+            </div>
+        </div>
+
+        <div class="control-card">
+            <h3>Settings</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label>Minimum Temperature (°C)</label>
+                    <input type="number" ng-model="settings.min_temp" min="15" max="40" 
+                           style="width: 100%; padding: 8px; margin: 5px 0;">
+                </div>
+                <div>
+                    <label>Maximum Temperature (°C)</label>
+                    <input type="number" ng-model="settings.max_temp" min="30" max="70" 
+                           style="width: 100%; padding: 8px; margin: 5px 0;">
+                </div>
+            </div>
+            
+            <div style="margin: 15px 0;">
+                <label>Check Interval (seconds)</label>
+                <input type="number" ng-model="settings.check_interval" min="5" max="60" 
+                       style="width: 100%; padding: 8px; margin: 5px 0;">
+            </div>
+            
+            <div style="margin: 15px 0;">
+                <label>
+                    <input type="checkbox" ng-model="settings.use_pwm">
+                    Enable PWM 50Hz Control
+                </label>
+            </div>
+            
+            <button class="button button-success" ng-click="updateSettings()" style="width: 100%;">
+                Save Settings
+            </button>
+        </div>
+
+        <div class="alert alert-success" ng-if="message" ng-class="{'alert-error': messageType === 'error'}">
+            {{message}}
+        </div>
+    </div>
+
+    <script src="/lib/angular/angular.js"></script>
+    <script>
+        angular.module('volumio', [])
+        .controller('FanControllerCtrl', function($scope, $http, $interval) {
+            $scope.temperature = '--';
+            $scope.fanSpeed = '--';
+            $scope.manualSpeed = 0;
+            $scope.status = {};
+            $scope.settings = {};
+            $scope.message = '';
+            $scope.messageType = 'success';
+            
+            // Load initial data
+            function loadStatus() {
+                $http.get('/api/fancontroller/status')
+                    .then(function(response) {
+                        if (response.data.status === 'success') {
+                            $scope.status = response.data.data;
+                            $scope.temperature = $scope.status.current_temperature.toFixed(1);
+                            $scope.fanSpeed = $scope.status.current_speed;
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Error loading status:', error);
+                    });
+            }
+            
+            // Load settings
+            function loadSettings() {
+                $http.get('/api/fancontroller/settings')
+                    .then(function(response) {
+                        if (response.data.status === 'success') {
+                            $scope.settings = response.data.data;
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Error loading settings:', error);
+                    });
+            }
+            
+            // Enable fan control
+            $scope.enableFan = function() {
+                $http.post('/api/fancontroller/enable')
+                    .then(function(response) {
+                        if (response.data.status === 'success') {
+                            showMessage('Fan control enabled', 'success');
+                            loadStatus();
+                        }
+                    })
+                    .catch(function(error) {
+                        showMessage('Error enabling fan control', 'error');
+                    });
+            };
+            
+            // Disable fan control
+            $scope.disableFan = function() {
+                $http.post('/api/fancontroller/disable')
+                    .then(function(response) {
+                        if (response.data.status === 'success') {
+                            showMessage('Fan control disabled', 'success');
+                            loadStatus();
+                        }
+                    })
+                    .catch(function(error) {
+                        showMessage('Error disabling fan control', 'error');
+                    });
+            };
+            
+            // Set manual speed
+            $scope.setManualSpeed = function() {
+                $http.post('/api/fancontroller/speed/' + $scope.manualSpeed)
+                    .then(function(response) {
+                        if (response.data.status === 'success') {
+                            showMessage('Manual speed set to ' + $scope.manualSpeed + '%', 'success');
+                            loadStatus();
+                        }
+                    })
+                    .catch(function(error) {
+                        showMessage('Error setting fan speed', 'error');
+                    });
+            };
+            
+            // Set specific speed
+            $scope.setSpeed = function(speed) {
+                $scope.manualSpeed = speed;
+                $scope.setManualSpeed();
+            };
+            
+            // Update settings
+            $scope.updateSettings = function() {
+                $http.post('/api/fancontroller/settings', $scope.settings)
+                    .then(function(response) {
+                        if (response.data.status === 'success') {
+                            showMessage('Settings updated successfully', 'success');
+                            loadStatus();
+                        }
+                    })
+                    .catch(function(error) {
+                        showMessage('Error updating settings', 'error');
+                    });
+            };
+            
+            // Show message
+            function showMessage(text, type) {
+                $scope.message = text;
+                $scope.messageType = type;
+                setTimeout(function() {
+                    $scope.message = '';
+                    $scope.$apply();
+                }, 3000);
+            }
+            
+            // Auto-refresh temperature
+            $interval(function() {
+                if ($scope.status.enabled) {
+                    loadStatus();
+                }
+            }, 5000);
+            
+            // Initial load
+            loadStatus();
+            loadSettings();
+        });
+    </script>
+</body>
+</html>

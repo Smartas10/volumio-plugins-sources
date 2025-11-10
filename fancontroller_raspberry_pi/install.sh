@@ -105,6 +105,10 @@ echo "Creating log directory..."
 mkdir -p /var/log/fancontroller
 chown volumio:volumio /var/log/fancontroller 2>/dev/null || true
 
+# Создание директории для веб-интерфейса
+echo "Creating web interface directory..."
+mkdir -p /data/plugins/system_controller/fancontroller-raspberry-pi/web-ui
+
 echo ""
 echo "================================================"
 echo "SYSTEM CHECK COMPLETE"
@@ -134,6 +138,12 @@ echo "  • Fan starts at 20°C (0% duty cycle)"
 echo "  • Linear speed increase from 20°C to 50°C"
 echo "  • Full speed (100% duty cycle) at 50°C"
 echo "  • Optimized PWM control for quiet operation"
+echo ""
+echo "WEB INTERFACE:"
+echo "  • Access via: http://volumio.local/plugin/fancontroller-raspberry-pi/"
+echo "  • Real-time temperature monitoring"
+echo "  • Manual speed control"
+echo "  • API endpoints for remote control"
 echo ""
 echo "IMPORTANT:"
 echo "  • Uses BCM GPIO numbering (GPIO 14)"
