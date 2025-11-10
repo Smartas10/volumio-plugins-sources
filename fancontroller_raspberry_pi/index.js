@@ -20,11 +20,8 @@ function FanController(context) {
     
     self.fanInterval = null;
     self.pwmInterval = null;
-    self.statusInterval = null;
     self.isInitialized = false;
     self.useHardwarePWM = false;
-    self.currentTemperature = 0;
-    self.currentFanSpeed = 0;
 }
 
 FanController.prototype.onVolumioStart = function() {
@@ -36,7 +33,6 @@ FanController.prototype.onVolumioStart = function() {
         self.logger.info('FanController: PWM 50Hz control - Temperature based duty cycle');
         self.checkPWMSupport();
         self.startFanControl();
-        self.startStatusUpdates();
         self.isInitialized = true;
     }).fail(function(error) {
         self.logger.error('FanController: Error during startup: ' + error);
@@ -46,7 +42,6 @@ FanController.prototype.onVolumioStart = function() {
 FanController.prototype.onVolumioShutdown = function() {
     var self = this;
     self.stopFanControl();
-    self.stopStatusUpdates();
     self.cleanupGPIO();
     self.logger.info('FanController: Plugin stopped - GPIO cleaned up');
 };
@@ -95,7 +90,7 @@ FanController.prototype.setupDefaults = function() {
     
     var defaults = {
         'enabled': false,
-        'gpio_pin': self.GPIO_PIN,  // Fixed to GPIO 14 (Pin 8)
+        'gpio_pin': self.GPIO_PIN,
         'min_temp': 20,    // Fan starts at 20°C
         'max_temp': 50,    // Full speed at 50°C
         'check_interval': 10,
@@ -124,131 +119,220 @@ FanController.prototype.checkPWMSupport = function() {
     });
 };
 
-FanController.prototype.getUIConfig = function() {
+// Console commands for configuration
+FanController.prototype.getConsoleCommands = function() {
+    var self = this;
+    
+    return [
+        {
+            command: 'fancontroller-enable',
+            description: 'Enable automatic fan control',
+            executable: true,
+            handler: self.enableFanControl.bind(self)
+        },
+        {
+            command: 'fancontroller-disable', 
+            description: 'Disable automatic fan control',
+            executable: true,
+            handler: self.disableFanControl.bind(self)
+        },
+        {
+            command: 'fancontroller-setSpeed',
+            description: 'Set manual fan speed (0-100)',
+            executable: true,
+            parameters: [
+                {
+                    name: 'speed',
+                    type: 'integer',
+                    min: 0,
+                    max: 100
+                }
+            ],
+            handler: self.setFanSpeedCommand.bind(self)
+        },
+        {
+            command: 'fancontroller-status',
+            description: 'Get current fan controller status',
+            executable: true,
+            handler: self.getStatus.bind(self)
+        },
+        {
+            command: 'fancontroller-setTempRange',
+            description: 'Set temperature range (min max)',
+            executable: true,
+            parameters: [
+                {
+                    name: 'min_temp',
+                    type: 'integer',
+                    min: 15,
+                    max: 40
+                },
+                {
+                    name: 'max_temp', 
+                    type: 'integer',
+                    min: 30,
+                    max: 70
+                }
+            ],
+            handler: self.setTempRange.bind(self)
+        },
+        {
+            command: 'fancontroller-setInterval',
+            description: 'Set check interval in seconds',
+            executable: true,
+            parameters: [
+                {
+                    name: 'interval',
+                    type: 'integer',
+                    min: 5,
+                    max: 60
+                }
+            ],
+            handler: self.setCheckInterval.bind(self)
+        }
+    ];
+};
+
+FanController.prototype.enableFanControl = function() {
     var self = this;
     var defer = libQ.defer();
     
-    var langCode = this.commandRouter.sharedVars.get('language_code');
-    
-    self.loadI18nStrings(langCode).then(function(i18n) {
-        self.commandRouter.i18nJson(__dirname + '/i18n/strings_' + langCode + '.json',
-            __dirname + '/UIConfig.json')
-        .then(function(uiconf) {
-            // Fill UI configuration with current values
-            self.updateUIConfigValues(uiconf);
-            defer.resolve(uiconf);
-        })
-        .fail(function(error) {
-            self.logger.error('FanController: Could not load UI config: ' + error);
-            defer.reject(error);
-        });
-    });
-    
-    return defer.promise;
-};
-
-FanController.prototype.updateUIConfigValues = function(uiconf) {
-    var self = this;
-    
-    // Basic Settings section
-    uiconf.sections[0].content[0].value = self.config.get('enabled');
-    uiconf.sections[0].content[1].value = self.config.get('gpio_pin');
-    uiconf.sections[0].content[2].value = self.config.get('min_temp');
-    uiconf.sections[0].content[3].value = self.config.get('max_temp');
-    uiconf.sections[0].content[4].value = self.config.get('check_interval');
-    uiconf.sections[0].content[5].value = self.config.get('use_pwm');
-    
-    // Manual Control section
-    uiconf.sections[1].content[0].value = self.config.get('fan_speed');
-    
-    // Status section - update with real-time data
-    uiconf.sections[2].content[0].value = self.currentTemperature.toFixed(1) + '°C';
-    uiconf.sections[2].content[1].value = self.currentFanSpeed + '% (PWM)';
-    uiconf.sections[2].content[2].value = 'GPIO ' + self.GPIO_PIN + ' - Physical Pin 8 (BCM)';
-    uiconf.sections[2].content[3].value = 'Fan+: Pin 8, Fan-: Pin 9(GND)';
-    uiconf.sections[2].content[4].value = 'PWM 50Hz - ' + (self.useHardwarePWM ? 'Hardware' : 'Software') + ' PWM';
-    
-    // Add temperature status indicator
-    if (self.currentTemperature < 20) {
-        uiconf.sections[2].content[0].value += ' ❄️ Cool';
-    } else if (self.currentTemperature < 40) {
-        uiconf.sections[2].content[0].value += ' ✅ Normal';
-    } else {
-        uiconf.sections[2].content[0].value += ' 🔥 Hot';
-    }
-    
-    // Compatibility section
-    uiconf.sections[3].content[0].value = self.config.get('enabled') ? '🟢 ACTIVE' : '🔴 DISABLED';
-    uiconf.sections[3].content[1].value = '✅ No conflicts detected';
-    uiconf.sections[3].content[2].value = '✅ GPIO 14 (Pin 8) is safe';
-    uiconf.sections[3].content[3].value = self.config.get('min_temp') + '°C (0%) to ' + self.config.get('max_temp') + '°C (100%)';
-};
-
-FanController.prototype.updateUIConfig = function() {
-    var self = this;
-    var defer = libQ.defer();
-    
-    self.getUIConfig().then(function(uiconf) {
-        self.commandRouter.broadcastMessage('pushUiConfig', uiconf);
-        defer.resolve(uiconf);
-    }).fail(function(error) {
-        self.logger.error('FanController: Error updating UI config: ' + error);
-        defer.reject(error);
-    });
-    
-    return defer.promise;
-};
-
-FanController.prototype.setUIConfig = function(data) {
-    var self = this;
-    
-    // Validate input data
-    var minTemp = parseInt(data.min_temp);
-    var maxTemp = parseInt(data.max_temp);
-    var interval = parseInt(data.check_interval);
-    
-    if (minTemp >= maxTemp) {
-        self.logger.error('FanController: min_temp must be less than max_temp');
-        return libQ.reject(new Error('Minimum temperature must be less than maximum temperature'));
-    }
-    
-    if (interval < 5 || interval > 60) {
-        self.logger.error('FanController: check_interval must be between 5 and 60 seconds');
-        return libQ.reject(new Error('Check interval must be between 5 and 60 seconds'));
-    }
-    
-    self.config.set('enabled', data.enabled);
-    self.config.set('min_temp', minTemp);
-    self.config.set('max_temp', maxTemp);
-    self.config.set('check_interval', interval);
-    self.config.set('use_pwm', data.use_pwm);
-    
-    return self.saveConfig().then(function() {
+    self.config.set('enabled', true);
+    self.saveConfig().then(function() {
         self.restartFanControl();
-        self.updateUIConfig();
-        self.logger.info('FanController: Configuration updated - PWM Cooling: ' + minTemp + '°C to ' + maxTemp + '°C');
+        self.logger.info('FanController: Automatic fan control ENABLED');
+        defer.resolve('Automatic fan control ENABLED - PWM 50Hz active');
+    }).fail(function(error) {
+        defer.reject('Failed to enable fan control: ' + error);
     });
+    
+    return defer.promise;
 };
 
-FanController.prototype.setFanSpeed = function(speed) {
+FanController.prototype.disableFanControl = function() {
     var self = this;
+    var defer = libQ.defer();
+    
+    self.config.set('enabled', false);
+    self.saveConfig().then(function() {
+        self.stopFanControl();
+        self.logger.info('FanController: Automatic fan control DISABLED');
+        defer.resolve('Automatic fan control DISABLED - Fan stopped');
+    }).fail(function(error) {
+        defer.reject('Failed to disable fan control: ' + error);
+    });
+    
+    return defer.promise;
+};
+
+FanController.prototype.setFanSpeedCommand = function(speed) {
+    var self = this;
+    var defer = libQ.defer();
+    
     speed = parseInt(speed);
     
     if (speed < 0 || speed > 100) {
-        self.logger.error('FanController: Fan speed must be between 0 and 100');
-        return libQ.reject(new Error('Fan speed must be between 0 and 100'));
+        defer.reject('Fan speed must be between 0 and 100');
+        return defer.promise;
     }
     
     self.config.set('fan_speed', speed);
-    self.currentFanSpeed = speed;
-    
-    return self.saveConfig().then(function() {
+    self.saveConfig().then(function() {
         if (self.config.get('enabled')) {
             self.applyFanSpeed(speed);
         }
-        self.updateUIConfig();
-        self.logger.info('FanController: Manual fan speed set to ' + speed + '% (PWM)');
+        self.logger.info('FanController: Manual fan speed set to ' + speed + '%');
+        defer.resolve('Fan speed set to ' + speed + '% (PWM 50Hz)');
+    }).fail(function(error) {
+        defer.reject('Failed to set fan speed: ' + error);
     });
+    
+    return defer.promise;
+};
+
+FanController.prototype.getStatus = function() {
+    var self = this;
+    var defer = libQ.defer();
+    
+    self.getSystemTemperature().then(function(temp) {
+        var status = {
+            enabled: self.config.get('enabled'),
+            current_temperature: temp.toFixed(1) + '°C',
+            current_speed: self.config.get('fan_speed') + '%',
+            gpio_pin: 'GPIO ' + self.GPIO_PIN + ' (Pin 8)',
+            min_temp: self.config.get('min_temp') + '°C',
+            max_temp: self.config.get('max_temp') + '°C',
+            check_interval: self.config.get('check_interval') + 's',
+            use_pwm: self.config.get('use_pwm') ? '50Hz PWM' : 'ON/OFF',
+            pwm_mode: self.useHardwarePWM ? 'Hardware PWM' : 'Software PWM'
+        };
+        
+        var statusText = '=== FAN CONTROLLER STATUS ===\n';
+        statusText += 'Enabled: ' + (status.enabled ? 'YES' : 'NO') + '\n';
+        statusText += 'Temperature: ' + status.current_temperature + '\n';
+        statusText += 'Fan Speed: ' + status.current_speed + '\n';
+        statusText += 'GPIO: ' + status.gpio_pin + '\n';
+        statusText += 'Temp Range: ' + status.min_temp + ' - ' + status.max_temp + '\n';
+        statusText += 'Check Interval: ' + status.check_interval + '\n';
+        statusText += 'PWM Mode: ' + status.pwm_mode + '\n';
+        statusText += 'Control Type: ' + status.use_pwm + '\n';
+        
+        defer.resolve(statusText);
+    }).fail(function(error) {
+        defer.reject('Failed to get status: ' + error);
+    });
+    
+    return defer.promise;
+};
+
+FanController.prototype.setTempRange = function(minTemp, maxTemp) {
+    var self = this;
+    var defer = libQ.defer();
+    
+    minTemp = parseInt(minTemp);
+    maxTemp = parseInt(maxTemp);
+    
+    if (minTemp >= maxTemp) {
+        defer.reject('Minimum temperature must be less than maximum temperature');
+        return defer.promise;
+    }
+    
+    self.config.set('min_temp', minTemp);
+    self.config.set('max_temp', maxTemp);
+    
+    self.saveConfig().then(function() {
+        self.restartFanControl();
+        self.logger.info('FanController: Temperature range set to ' + minTemp + '°C - ' + maxTemp + '°C');
+        defer.resolve('Temperature range set to ' + minTemp + '°C - ' + maxTemp + '°C');
+    }).fail(function(error) {
+        defer.reject('Failed to set temperature range: ' + error);
+    });
+    
+    return defer.promise;
+};
+
+FanController.prototype.setCheckInterval = function(interval) {
+    var self = this;
+    var defer = libQ.defer();
+    
+    interval = parseInt(interval);
+    
+    if (interval < 5 || interval > 60) {
+        defer.reject('Check interval must be between 5 and 60 seconds');
+        return defer.promise;
+    }
+    
+    self.config.set('check_interval', interval);
+    
+    self.saveConfig().then(function() {
+        self.restartFanControl();
+        self.logger.info('FanController: Check interval set to ' + interval + ' seconds');
+        defer.resolve('Check interval set to ' + interval + ' seconds');
+    }).fail(function(error) {
+        defer.reject('Failed to set check interval: ' + error);
+    });
+    
+    return defer.promise;
 };
 
 FanController.prototype.getSystemTemperature = function() {
@@ -474,8 +558,6 @@ FanController.prototype.startFanControl = function() {
             // Start temperature monitoring
             self.fanInterval = setInterval(function() {
                 self.getSystemTemperature().then(function(temp) {
-                    self.currentTemperature = temp;
-                    
                     var minTemp = self.config.get('min_temp');
                     var maxTemp = self.config.get('max_temp');
                     var currentSpeed = self.config.get('fan_speed');
@@ -496,11 +578,7 @@ FanController.prototype.startFanControl = function() {
                     if (newSpeed !== currentSpeed) {
                         self.applyFanSpeed(newSpeed);
                         self.config.set('fan_speed', newSpeed);
-                        self.currentFanSpeed = newSpeed;
                         self.logger.info('FanController: RPi Temp ' + temp.toFixed(1) + '°C → PWM ' + newSpeed + '%, GPIO ' + self.GPIO_PIN);
-                        
-                        // Update UI
-                        self.updateUIConfig();
                     }
                 }).fail(function(error) {
                     self.logger.error('FanController: Error reading temperature: ' + error);
@@ -515,30 +593,6 @@ FanController.prototype.startFanControl = function() {
         self.logger.info('FanController: Fan control disabled in configuration');
         // Ensure fan is off when disabled
         self.applyFanSpeed(0);
-        self.currentFanSpeed = 0;
-        self.updateUIConfig();
-    }
-};
-
-FanController.prototype.startStatusUpdates = function() {
-    var self = this;
-    
-    // Update status every 5 seconds
-    self.statusInterval = setInterval(function() {
-        self.getSystemTemperature().then(function(temp) {
-            self.currentTemperature = temp;
-            self.currentFanSpeed = self.config.get('fan_speed');
-            self.updateUIConfig();
-        });
-    }, 5000);
-};
-
-FanController.prototype.stopStatusUpdates = function() {
-    var self = this;
-    
-    if (self.statusInterval) {
-        clearInterval(self.statusInterval);
-        self.statusInterval = null;
     }
 };
 
@@ -558,8 +612,6 @@ FanController.prototype.stopFanControl = function() {
     
     // Turn fan off
     self.applyFanSpeed(0);
-    self.currentFanSpeed = 0;
-    self.updateUIConfig();
 };
 
 FanController.prototype.cleanupGPIO = function() {
@@ -601,31 +653,9 @@ FanController.prototype.restartFanControl = function() {
     }, 1000);
 };
 
-FanController.prototype.loadI18nStrings = function(langCode) {
-    var self = this;
-    var defer = libQ.defer();
-    
-    try {
-        var i18nPath = __dirname + '/i18n/strings_' + langCode + '.json';
-        if (!fs.existsSync(i18nPath)) {
-            i18nPath = __dirname + '/i18n/strings_en.json';
-        }
-        
-        var i18nFile = fs.readFileSync(i18nPath, 'utf8');
-        var i18n = JSON.parse(i18nFile);
-        defer.resolve(i18n);
-    } catch (e) {
-        self.logger.error('FanController: Could not load i18n strings: ' + e);
-        defer.resolve({});
-    }
-    
-    return defer.promise;
-};
-
 // Required plugin methods
 FanController.prototype.onStop = function() {
     this.stopFanControl();
-    this.stopStatusUpdates();
     this.cleanupGPIO();
     this.logger.info('FanController: Plugin stopped');
 };
@@ -648,7 +678,6 @@ FanController.prototype.onUninstall = function() {
     self.logger.info('FanController: Uninstalling plugin...');
     
     self.stopFanControl();
-    self.stopStatusUpdates();
     self.cleanupGPIO();
     
     // Additional cleanup

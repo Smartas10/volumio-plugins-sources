@@ -45,7 +45,7 @@ else
 fi
 
 # Удаление конфигурационных файлов
-echo "Removing configuration files..."
+echo "Remaining configuration files..."
 CONFIG_DIR="/data/configuration/system_controller/$PLUGIN_NAME"
 if [ -d "$CONFIG_DIR" ]; then
     rm -rf "$CONFIG_DIR"
