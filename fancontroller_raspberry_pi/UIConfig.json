@@ -155,14 +155,14 @@
         {
           "id": "compatibility_info",
           "element": "display",
-          "label": "Plugin Type",
-          "value": "system_controller (No hardware conflicts)"
+          "label": "Status",
+          "value": "🔴 DISABLED"
         },
         {
           "id": "conflict_check",
           "element": "display",
           "label": "Conflict Status",
-          "value": "No known conflicts detected"
+          "value": "No conflicts detected"
         },
         {
           "id": "gpio_safety",

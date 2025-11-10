@@ -24,9 +24,8 @@
   "Connection Guide": "Connection Guide",
   "PWM Mode": "PWM Mode",
   "Compatibility Information": "Compatibility Information",
-  "Plugin Type": "Plugin Type",
+  "Status": "Status",
   "Conflict Status": "Conflict Status",
   "GPIO Safety": "GPIO Safety",
-  "PWM Temperature Range": "PWM Temperature Range",
-  "20°C (0%) to 50°C (100%) duty cycle": "20°C (0%) to 50°C (100%) duty cycle"
+  "PWM Temperature Range": "PWM Temperature Range"
 }
