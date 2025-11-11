@@ -1,0 +1,33 @@
+{
+  "name": "fancontroller-raspberry-pi",
+  "version": "2.3.0",
+  "description": "Fan Controller for Raspberry Pi - GPIO 14 (Pin 8) - PWM 50Hz 20-80°C",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Smartas10",
+  "license": "MIT",
+  "volumio_info": {
+    "prettyName": "Fan Controller - Raspberry Pi",
+    "icon": "fa fa-thermometer-half",
+    "plugin_type": "system_controller",
+    "boot_priority": 15,
+    "architectures": [
+      "arm",
+      "armv7",
+      "armv8"
+    ],
+    "details": "Fan controller for Raspberry Pi using GPIO 14 (Pin 8) - PWM 50Hz control 20-80°C",
+    "version": "2.3.0",
+    "changelog": "Fixed PWM 50Hz, temperature range 20-80°C, 5V output"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "volumio": ">=3.0.0"
+  },
+  "dependencies": {
+    "kew": "^0.7.0",
+    "v-conf": "^1.4.0"
+  }
+}
