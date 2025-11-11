@@ -1,7 +1,7 @@
 {
   "name": "fancontroller-rpi3",
-  "version": "3.1.1",
-  "description": "Fan Controller for Raspberry Pi - GPIO 14, PWM 50Hz",
+  "version": "3.1.2",
+  "description": "Fan Controller for Raspberry Pi - GPIO 18, PWM 50Hz",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,9 +14,9 @@
     "plugin_type": "system_controller",
     "boot_priority": 15,
     "architectures": ["arm", "armv7", "armhf"],
-    "details": "Fan controller for Raspberry Pi - PWM 50Hz on GPIO 14",
-    "version": "3.1.1",
-    "changelog": "Fixed auto-enable and compatibility for Volumio 3"
+    "details": "Fan controller for Raspberry Pi - PWM 50Hz on GPIO 18",
+    "version": "3.1.2",
+    "changelog": "Changed to GPIO 18 for better compatibility"
   },
   "engines": {
     "node": ">=12.0.0",

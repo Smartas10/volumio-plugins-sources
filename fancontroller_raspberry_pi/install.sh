@@ -2,7 +2,7 @@
 
 echo "================================================"
 echo "Fan Controller for Raspberry Pi"
-echo "GPIO 14 - PWM 50Hz - 20°C to 80°C"
+echo "GPIO 18 - PWM 50Hz - 20°C to 80°C"
 echo "================================================"
 
 # Проверка системы
@@ -47,6 +47,11 @@ sudo mv /tmp/99-gpio.rules /etc/udev/rules.d/ 2>/dev/null || true
 sudo udevadm control --reload-rules 2>/dev/null || true
 sudo udevadm trigger 2>/dev/null || true
 
+# Инициализация GPIO 18
+echo "Initializing GPIO 18..."
+gpio mode 18 out 2>/dev/null || true
+gpio write 18 0 2>/dev/null || true
+
 # Проверка датчика температуры
 echo "Checking temperature sensor..."
 if [ -f "/sys/class/thermal/thermal_zone0/temp" ]; then
@@ -65,17 +70,12 @@ chown volumio:volumio /var/log/fancontroller 2>/dev/null || true
 echo "Installing Node.js dependencies..."
 npm install --production --unsafe-perm
 
-# Инициализация GPIO
-echo "Initializing GPIO 14..."
-gpio mode 14 out 2>/dev/null || true
-gpio write 14 0 2>/dev/null || true
-
 echo ""
 echo "================================================"
 echo "INSTALLATION COMPLETE"
 echo "================================================"
 echo "Fan Controller installed successfully"
-echo "GPIO 14 (Physical Pin 8) - PWM 50Hz"
+echo "GPIO 18 (Physical Pin 12) - PWM 50Hz"
 echo "Temperature range: 20°C to 80°C"
 echo "Plugin will auto-start on boot"
 
