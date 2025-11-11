@@ -1,6 +1,6 @@
 {
   "name": "fancontroller-rpi3",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Fan Controller for Raspberry Pi 3 - GPIO 14, PWM 50Hz",
   "main": "index.js",
   "scripts": {
@@ -15,8 +15,8 @@
     "boot_priority": 15,
     "architectures": ["arm", "armv7"],
     "details": "Fan controller for Raspberry Pi 3 - PWM 50Hz on GPIO 14",
-    "version": "3.0.0",
-    "changelog": "Optimized for Raspberry Pi 3"
+    "version": "3.1.0",
+    "changelog": "Fixed temperature reading for Volumio"
   },
   "engines": {
     "node": ">=14.0.0",

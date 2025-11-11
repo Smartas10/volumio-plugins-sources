@@ -110,7 +110,8 @@ FanController.prototype.getUIConfig = function() {
             current_speed: speed,
             pwm_frequency: "50 Hz",
             gpio_pin: "GPIO 14 (Pin 8)",
-            platform: "Raspberry Pi 3"
+            platform: "Raspberry Pi 3",
+            temp_sensor: "thermal_zone0"
         };
         
         defer.resolve(config);
@@ -199,7 +200,8 @@ FanController.prototype.getStatus = function() {
             gpio: 'GPIO 14 (Pin 8)',
             platform: 'Raspberry Pi 3',
             pwm: '50Hz',
-            temp_range: self.MIN_TEMP + '°C - ' + self.MAX_TEMP + '°C'
+            temp_range: self.MIN_TEMP + '°C - ' + self.MAX_TEMP + '°C',
+            temp_sensor: 'thermal_zone0'
         };
         defer.resolve(JSON.stringify(status, null, 2));
     });
@@ -226,24 +228,16 @@ FanController.prototype.getSystemTemperature = function() {
     var self = this;
     var defer = libQ.defer();
     
-    // Используем vcgencmd для Raspberry Pi
-    exec('vcgencmd measure_temp', function(error, stdout) {
-        if (!error && stdout) {
-            var tempMatch = stdout.match(/temp=([0-9.]+)'C/);
-            if (tempMatch) {
-                defer.resolve(parseFloat(tempMatch[1]));
-                return;
-            }
+    // Используем thermal_zone0 для чтения температуры
+    fs.readFile('/sys/class/thermal/thermal_zone0/temp', 'utf8', function(err, data) {
+        if (!err && data) {
+            var temp = parseInt(data) / 1000;
+            self.logger.debug('FanController: Temperature from thermal_zone0: ' + temp + '°C');
+            defer.resolve(temp);
+        } else {
+            self.logger.error('FanController: Failed to read temperature from thermal_zone0, using default 35°C');
+            defer.resolve(35); // Безопасная температура по умолчанию
         }
-        
-        self.logger.error('FanController: vcgencmd failed, using thermal zone');
-        fs.readFile('/sys/class/thermal/thermal_zone0/temp', 'utf8', function(err, data) {
-            if (!err && data) {
-                defer.resolve(parseInt(data) / 1000);
-            } else {
-                defer.resolve(35);
-            }
-        });
     });
     
     return defer.promise;
@@ -275,6 +269,7 @@ FanController.prototype.setupGPIO = function() {
             });
         } else {
             exec('gpio write ' + self.GPIO_PIN + ' 0', function() {
+                self.logger.info('FanController: GPIO 14 setup with wiringPi');
                 defer.resolve();
             });
         }
@@ -341,6 +336,8 @@ FanController.prototype.applyPWM = function(speed) {
         }, onTime);
         
     }, self.PWM_PERIOD_MS);
+    
+    self.logger.debug('FanController: 50Hz PWM set to ' + speed + '% duty cycle');
 };
 
 FanController.prototype.startFanControl = function() {
@@ -361,6 +358,8 @@ FanController.prototype.startFanControl = function() {
                         self.config.set('fan_speed', newSpeed);
                         self.logger.info('FanController RPi3: ' + temp.toFixed(1) + '°C → ' + newSpeed + '% PWM');
                     }
+                }).fail(function(error) {
+                    self.logger.error('FanController: Temperature read failed: ' + error);
                 });
             }, self.config.get('check_interval') * 1000);
             
@@ -369,6 +368,7 @@ FanController.prototype.startFanControl = function() {
         });
     } else {
         self.applyPWM(0);
+        self.logger.info('FanController: Fan control disabled');
     }
 };
 

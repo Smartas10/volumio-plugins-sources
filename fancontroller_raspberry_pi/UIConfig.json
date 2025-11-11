@@ -85,6 +85,13 @@
           "label": "Platform",
           "description": "Device type",
           "value": "Raspberry Pi 3"
+        },
+        {
+          "id": "temp_sensor",
+          "element": "value",
+          "label": "Temperature Sensor",
+          "description": "Temperature source",
+          "value": "thermal_zone0"
         }
       ]
     }

@@ -34,11 +34,14 @@ if [ ! -d "/sys/class/gpio" ]; then
     exit 1
 fi
 
-# Проверка датчика температуры
+# Проверка датчика температуры через thermal zone
 echo "Checking temperature sensor..."
-if ! command -v vcgencmd >/dev/null 2>&1; then
-    echo "ERROR: vcgencmd not found - not a Raspberry Pi?"
-    exit 1
+if [ -f "/sys/class/thermal/thermal_zone0/temp" ]; then
+    echo "✓ Thermal zone temperature sensor available"
+    TEMP=$(cat /sys/class/thermal/thermal_zone0/temp)
+    echo "Current temperature: $((TEMP/1000))°C"
+else
+    echo "⚠ Thermal zone not found, using default temperature"
 fi
 
 # Создание лог директории
