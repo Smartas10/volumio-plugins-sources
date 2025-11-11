@@ -35,33 +35,37 @@ FanController.prototype.onVolumioStart = function() {
     
     self.logger.info('FanController: Starting plugin initialization - GPIO 17');
     
-    // РЕГИСТРАЦИЯ КОНСОЛЬНЫХ КОМАНД
+    // РЕГИСТРАЦИЯ КОНСОЛЬНЫХ КОМАНД - С ЗАЩИТОЙ ОТ ОШИБОК
     try {
-        self.commandRouter.consoleCommandService.registerCommand(
-            'fancontroller-enable',
-            this.enableFanControl.bind(this),
-            'Enable fan control'
-        );
-        
-        self.commandRouter.consoleCommandService.registerCommand(
-            'fancontroller-disable',
-            this.disableFanControl.bind(this),
-            'Disable fan control'
-        );
-        
-        self.commandRouter.consoleCommandService.registerCommand(
-            'fancontroller-status',
-            this.getStatus.bind(this),
-            'Get fan controller status'
-        );
-        
-        self.commandRouter.consoleCommandService.registerCommand(
-            'fancontroller-test',
-            this.testPWM.bind(this),
-            'Test PWM at 50% for 10 seconds'
-        );
-        
-        self.logger.info('FanController: Console commands registered');
+        if (self.commandRouter.consoleCommandService) {
+            self.commandRouter.consoleCommandService.registerCommand(
+                'fancontroller-enable',
+                this.enableFanControl.bind(this),
+                'Enable fan control'
+            );
+            
+            self.commandRouter.consoleCommandService.registerCommand(
+                'fancontroller-disable',
+                this.disableFanControl.bind(this),
+                'Disable fan control'
+            );
+            
+            self.commandRouter.consoleCommandService.registerCommand(
+                'fancontroller-status',
+                this.getStatus.bind(this),
+                'Get fan controller status'
+            );
+            
+            self.commandRouter.consoleCommandService.registerCommand(
+                'fancontroller-test',
+                this.testPWM.bind(this),
+                'Test PWM at 50% for 10 seconds'
+            );
+            
+            self.logger.info('FanController: Console commands registered');
+        } else {
+            self.logger.warn('FanController: consoleCommandService not available, skipping console commands');
+        }
     } catch (error) {
         self.logger.error('FanController: Failed to register console commands: ' + error);
     }
@@ -69,7 +73,7 @@ FanController.prototype.onVolumioStart = function() {
     return self.loadConfig().then(function() {
         self.logger.info('FanController: Configuration loaded');
         
-        // НЕ авто-включаем, ждем явной команды
+        // Авто-включаем если enabled в конфиге
         if (self.config.get('enabled')) {
             return self.startFanControl();
         } else {
@@ -116,7 +120,8 @@ FanController.prototype.loadConfig = function() {
 
 FanController.prototype.saveConfig = function() {
     var self = this;
-    var configJson = JSON.stringify(self.config.get(), null, 4);
+    var configData = self.config.get();
+    var configJson = JSON.stringify(configData, null, 4);
     
     return libQ.nfcall(fs.writeFile, self.configFile, configJson, 'utf8')
         .then(function() {
@@ -124,6 +129,8 @@ FanController.prototype.saveConfig = function() {
         })
         .fail(function(err) {
             self.logger.error('FanController: Config save failed: ' + err);
+            // Не прерываем выполнение при ошибке сохранения конфига
+            return libQ.resolve();
         });
 };
 
@@ -131,7 +138,7 @@ FanController.prototype.setupDefaults = function() {
     var self = this;
     
     var defaults = {
-        enabled: false, // По умолчанию выключен
+        enabled: true, // Теперь по умолчанию ВКЛЮЧЕН
         min_temp: self.MIN_TEMP,
         max_temp: self.MAX_TEMP,
         check_interval: 10,
