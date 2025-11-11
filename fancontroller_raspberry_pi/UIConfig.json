@@ -1,33 +1,10 @@
 {
   "page": {
-    "label": "Fan Controller - Raspberry Pi",
-    "title": "50Hz PWM Fan Control",
-    "description": "Automatic temperature control: 20°C-80°C, GPIO 14 (Pin 8)"
+    "label": "Raspberry Pi Fan Controller",
+    "title": "Fan Control Status",
+    "description": "Automatic PWM control - Always active"
   },
   "sections": [
-    {
-      "id": "control_section",
-      "element": "section",
-      "label": "Fan Control",
-      "elements": [
-        {
-          "id": "enabled",
-          "element": "switch",
-          "label": "Enable Fan Control",
-          "description": "Enable automatic temperature-based PWM control",
-          "value": true
-        },
-        {
-          "id": "check_interval",
-          "element": "number",
-          "label": "Check Interval (seconds)",
-          "description": "How often to check temperature (5-60 seconds)",
-          "min": 5,
-          "max": 60,
-          "value": 10
-        }
-      ]
-    },
     {
       "id": "status_section",
       "element": "section",
@@ -48,46 +25,39 @@
           "value": "--"
         },
         {
-          "id": "pwm_frequency",
+          "id": "pwm_status",
           "element": "value",
-          "label": "PWM Frequency",
-          "description": "PWM signal frequency",
-          "value": "50 Hz"
+          "label": "PWM Status",
+          "description": "Signal status",
+          "value": "50Hz Active"
         },
         {
-          "id": "pwm_voltage",
+          "id": "gpio_pin",
           "element": "value",
-          "label": "Output Voltage",
-          "description": "Signal voltage level",
-          "value": "5V"
-        },
-        {
-          "id": "gpio_info",
-          "element": "value",
-          "label": "GPIO Connection",
-          "description": "Physical connection pin",
-          "value": "GPIO 14 (Physical Pin 8)"
+          "label": "GPIO Pin",
+          "description": "Hardware connection",
+          "value": "GPIO 14 (Pin 8)"
         }
       ]
     },
     {
       "id": "info_section",
       "element": "section",
-      "label": "Technical Information",
+      "label": "Control Information",
       "elements": [
         {
-          "id": "temp_scale",
-          "element": "text",
-          "label": "Temperature Scale",
-          "description": "Fan speed based on CPU temperature",
-          "value": "20°C=0% | 30°C=17% | 40°C=33% | 50°C=50% | 60°C=67% | 70°C=83% | 80°C=100%"
+          "id": "temp_range",
+          "element": "value",
+          "label": "Temperature Range",
+          "description": "Automatic control range",
+          "value": "20°C - 80°C"
         },
         {
-          "id": "pwm_specs",
-          "element": "text",
-          "label": "PWM Specifications",
-          "description": "Signal characteristics",
-          "value": "Frequency: 50Hz fixed | Period: 20ms | Duty Cycle: 0-100% | Voltage: 5V"
+          "id": "control_mode",
+          "element": "value",
+          "label": "Control Mode",
+          "description": "Operation mode",
+          "value": "Automatic PWM"
         }
       ]
     }
