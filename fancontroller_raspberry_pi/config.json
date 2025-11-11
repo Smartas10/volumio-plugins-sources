@@ -1,5 +1,5 @@
 {
-  "enabled": true,
+  "enabled": false,
   "min_temp": 20,
   "max_temp": 80,
   "check_interval": 10,
