@@ -1,42 +1,61 @@
 #!/bin/bash
 
 echo "================================================"
-echo "Raspberry Pi Fan Controller Installation"
-echo "GPIO 14 - PWM 50Hz - Automatic 20°C-80°C"
+echo "Fan Controller for Raspberry Pi 3"
+echo "GPIO 14 - PWM 50Hz - 20°C to 80°C"
 echo "================================================"
 
-# Check if Raspberry Pi
-if [ ! -f /proc/device-tree/model ]; then
-    echo "WARNING: This plugin is for Raspberry Pi"
-else
-    echo "System: $(tr -d '\0' < /proc/device-tree/model)"
+# Проверка Raspberry Pi 3
+echo "Checking Raspberry Pi 3..."
+if ! grep -q "Raspberry Pi 3" /proc/device-tree/model 2>/dev/null; then
+    echo "WARNING: This plugin is optimized for Raspberry Pi 3"
+    echo "Detected: $(tr -d '\0' < /proc/device-tree/model)"
 fi
 
-# Check GPIO
+# Установка wiringPi для Raspberry Pi 3
+echo "Installing wiringPi for Raspberry Pi 3..."
+sudo apt-get update
+sudo apt-get install -y wiringpi
+
+# Проверка установки wiringPi
+if ! command -v gpio >/dev/null 2>&1; then
+    echo "ERROR: wiringPi installation failed!"
+    echo "Please install manually: sudo apt-get install wiringpi"
+    exit 1
+fi
+
+echo "wiringPi version:"
+gpio -v
+
+# Проверка GPIO
+echo "Checking GPIO access..."
 if [ ! -d "/sys/class/gpio" ]; then
     echo "ERROR: GPIO not available"
     exit 1
 fi
 
-echo "GPIO: OK"
-
-# Check temperature sensor
-if command -v vcgencmd >/dev/null 2>&1; then
-    echo "Temperature: vcgencmd available"
-else
-    echo "Temperature: Using thermal zone"
+# Проверка датчика температуры
+echo "Checking temperature sensor..."
+if ! command -v vcgencmd >/dev/null 2>&1; then
+    echo "ERROR: vcgencmd not found - not a Raspberry Pi?"
+    exit 1
 fi
 
-# Install dependencies
-echo "Installing dependencies..."
+# Создание лог директории
+mkdir -p /var/log/fancontroller
+chown volumio:volumio /var/log/fancontroller 2>/dev/null || true
+
+# Установка Node.js зависимостей
+echo "Installing Node.js dependencies..."
 npm install --production
 
 echo ""
 echo "================================================"
 echo "INSTALLATION COMPLETE"
 echo "================================================"
-echo "Fan control will start automatically"
-echo "GPIO 14 (Pin 8) - PWM 50Hz"
-echo "Temperature range: 20°C-80°C"
+echo "Raspberry Pi 3 Fan Controller installed"
+echo "GPIO 14 (Physical Pin 8) - PWM 50Hz"
+echo "Temperature range: 20°C to 80°C"
+echo "Web interface available in Volumio Settings"
 
 echo "plugininstallend"

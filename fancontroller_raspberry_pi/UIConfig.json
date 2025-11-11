@@ -1,20 +1,61 @@
 {
   "page": {
-    "label": "Raspberry Pi Fan Controller",
-    "title": "Fan Control Status",
-    "description": "Automatic PWM control - Always active"
+    "label": "Fan Controller - Raspberry Pi 3",
+    "title": "RPi3 Fan Control",
+    "description": "Automatic PWM control for Raspberry Pi 3 - GPIO 14, 50Hz"
   },
   "sections": [
     {
+      "id": "control_section",
+      "element": "section",
+      "label": "Fan Control",
+      "elements": [
+        {
+          "id": "enabled",
+          "element": "switch",
+          "label": "Enable Fan Control",
+          "description": "Enable automatic temperature control",
+          "value": true
+        },
+        {
+          "id": "min_temp",
+          "element": "number",
+          "label": "Min Temperature (°C)",
+          "description": "Fan starts at this temperature",
+          "min": 15,
+          "max": 40,
+          "value": 20
+        },
+        {
+          "id": "max_temp",
+          "element": "number",
+          "label": "Max Temperature (°C)",
+          "description": "Full speed at this temperature",
+          "min": 50,
+          "max": 85,
+          "value": 80
+        },
+        {
+          "id": "check_interval",
+          "element": "number",
+          "label": "Check Interval (seconds)",
+          "description": "Temperature check frequency",
+          "min": 5,
+          "max": 60,
+          "value": 10
+        }
+      ]
+    },
+    {
       "id": "status_section",
       "element": "section",
-      "label": "Current Status",
+      "label": "System Status",
       "elements": [
         {
           "id": "current_temp",
           "element": "value",
           "label": "CPU Temperature",
-          "description": "Current processor temperature",
+          "description": "Current RPi3 temperature",
           "value": "--"
         },
         {
@@ -25,11 +66,11 @@
           "value": "--"
         },
         {
-          "id": "pwm_status",
+          "id": "pwm_frequency",
           "element": "value",
-          "label": "PWM Status",
-          "description": "Signal status",
-          "value": "50Hz Active"
+          "label": "PWM Frequency",
+          "description": "Signal frequency",
+          "value": "50 Hz"
         },
         {
           "id": "gpio_pin",
@@ -37,27 +78,13 @@
           "label": "GPIO Pin",
           "description": "Hardware connection",
           "value": "GPIO 14 (Pin 8)"
-        }
-      ]
-    },
-    {
-      "id": "info_section",
-      "element": "section",
-      "label": "Control Information",
-      "elements": [
-        {
-          "id": "temp_range",
-          "element": "value",
-          "label": "Temperature Range",
-          "description": "Automatic control range",
-          "value": "20°C - 80°C"
         },
         {
-          "id": "control_mode",
+          "id": "platform",
           "element": "value",
-          "label": "Control Mode",
-          "description": "Operation mode",
-          "value": "Automatic PWM"
+          "label": "Platform",
+          "description": "Device type",
+          "value": "Raspberry Pi 3"
         }
       ]
     }
