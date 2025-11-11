@@ -25,7 +25,9 @@ function FanController(context) {
     self.pwmInterval = null;
     self.currentSpeed = 0;
     self.isInitialized = false;
-    self.isRunning = false; // Добавляем флаг состояния
+    self.isRunning = false;
+    self.pwmEnabled = false;
+    self.lastTemp = 0;
 }
 
 FanController.prototype.onVolumioStart = function() {
@@ -130,7 +132,7 @@ FanController.prototype.setupDefaults = function() {
     var self = this;
     
     var defaults = {
-        enabled: false, // По умолчанию выключен
+        enabled: false,
         min_temp: self.MIN_TEMP,
         max_temp: self.MAX_TEMP,
         check_interval: 10,
@@ -153,7 +155,7 @@ FanController.prototype.getUIConfig = function() {
     var defer = libQ.defer();
     
     self.getSystemTemperature().then(function(temp) {
-        var speed = self.isRunning ? self.calculateFanSpeed(temp) : 0;
+        var speed = self.isRunning ? self.currentSpeed : 0;
         var config = {
             enabled: self.config.get('enabled'),
             min_temp: self.config.get('min_temp'),
@@ -172,14 +174,13 @@ FanController.prototype.getUIConfig = function() {
     }).fail(function(error) {
         self.logger.error('FanController: UI config error: ' + error);
         
-        // Fallback config
         var fallbackConfig = {
             enabled: self.config.get('enabled'),
             min_temp: self.config.get('min_temp'),
             max_temp: self.config.get('max_temp'),
             check_interval: self.config.get('check_interval'),
             current_temp: "--",
-            current_speed: "--",
+            current_speed: self.currentSpeed,
             pwm_frequency: "50 Hz",
             gpio_pin: "GPIO 17 (Pin 11)",
             platform: self.getPlatformInfo(),
@@ -205,13 +206,10 @@ FanController.prototype.updateUIConfig = function(data) {
     
     self.saveConfig().then(function() {
         if (data.enabled && !wasEnabled) {
-            // Включаем если было выключено
             return self.startFanControl();
         } else if (!data.enabled && wasEnabled) {
-            // Выключаем если было включено
             self.stopFanControl();
         } else if (data.enabled && wasEnabled) {
-            // Перезапускаем если уже было включено
             return self.restartFanControl();
         }
     }).then(function() {
@@ -293,19 +291,18 @@ FanController.prototype.getStatus = function() {
     self.logger.info('FanController: Getting status via console command');
     
     self.getSystemTemperature().then(function(temp) {
-        var speed = self.isRunning ? self.calculateFanSpeed(temp) : 0;
         var status = {
             enabled: self.config.get('enabled'),
             running: self.isRunning,
             temperature: temp.toFixed(1) + '°C',
-            calculated_speed: speed + '%',
             current_speed: self.currentSpeed + '%',
             gpio: 'GPIO 17 (Pin 11)',
             platform: self.getPlatformInfo(),
             pwm: '50Hz',
             temp_range: self.config.get('min_temp') + '°C - ' + self.config.get('max_temp') + '°C',
             temp_sensor: 'thermal_zone0',
-            initialized: self.isInitialized
+            initialized: self.isInitialized,
+            pwm_enabled: self.pwmEnabled
         };
         defer.resolve(JSON.stringify(status, null, 2));
     }).fail(function(error) {
@@ -328,17 +325,14 @@ FanController.prototype.testPWM = function() {
     
     self.logger.info('FanController: Testing PWM at 50% via console command');
     
-    // Сохраняем текущее состояние
     var wasRunning = self.isRunning;
     
-    // Временно отключаем автоматическое управление
     self.stopFanControl();
     
     // Включаем PWM на 50%
     self.applyPWM(50);
     
     setTimeout(function() {
-        // Возвращаем автоматическое управление
         if (wasRunning) {
             self.startFanControl();
         } else {
@@ -357,10 +351,11 @@ FanController.prototype.getSystemTemperature = function() {
     fs.readFile('/sys/class/thermal/thermal_zone0/temp', 'utf8', function(err, data) {
         if (!err && data) {
             var temp = parseInt(data) / 1000;
-            self.logger.debug('FanController: Temperature: ' + temp + '°C');
+            self.lastTemp = temp;
             defer.resolve(temp);
         } else {
             self.logger.warn('FanController: Using default temperature 35°C');
+            self.lastTemp = 35;
             defer.resolve(35);
         }
     });
@@ -382,11 +377,9 @@ FanController.prototype.setupGPIO = function() {
     
     self.logger.info('FanController: Setting up GPIO 17');
     
-    // Пробуем wiringPi сначала
     exec('gpio mode 0 out', function(error) {
         if (error) {
             self.logger.warn('FanController: wiringPi failed, using sysfs');
-            // Fallback to sysfs
             exec('echo 17 > /sys/class/gpio/export 2>/dev/null', function() {
                 setTimeout(function() {
                     exec('echo out > /sys/class/gpio/gpio17/direction 2>/dev/null', function() {
@@ -422,35 +415,33 @@ FanController.prototype.calculateFanSpeed = function(temp) {
 FanController.prototype.applyPWM = function(speed) {
     var self = this;
     
-    // Очищаем предыдущий интервал PWM
-    if (self.pwmInterval) {
-        clearInterval(self.pwmInterval);
-        self.pwmInterval = null;
+    if (speed === self.currentSpeed && self.pwmEnabled) {
+        return;
     }
     
-    // Обновляем текущую скорость
     self.currentSpeed = speed;
     self.config.set('fan_speed', speed);
     
     self.logger.info('FanController: Applying PWM ' + speed + '%');
     
+    // Останавливаем предыдущий PWM
+    if (self.pwmInterval) {
+        clearInterval(self.pwmInterval);
+        self.pwmInterval = null;
+    }
+    
+    self.pwmEnabled = true;
+    
     // 0% - выключен
     if (speed === 0) {
-        exec('gpio write 0 0 2>/dev/null', function(error) {
-            if (error) {
-                exec('echo 0 > /sys/class/gpio/gpio17/value 2>/dev/null', function() {});
-            }
-        });
+        exec('gpio write 0 0', function() {});
+        self.pwmEnabled = false;
         return;
     }
     
     // 100% - постоянно включен
     if (speed === 100) {
-        exec('gpio write 0 1 2>/dev/null', function(error) {
-            if (error) {
-                exec('echo 1 > /sys/class/gpio/gpio17/value 2>/dev/null', function() {});
-            }
-        });
+        exec('gpio write 0 1', function() {});
         return;
     }
     
@@ -458,24 +449,22 @@ FanController.prototype.applyPWM = function(speed) {
     var onTime = (speed / 100) * self.PWM_PERIOD_MS;
     var offTime = self.PWM_PERIOD_MS - onTime;
     
-    self.pwmInterval = setInterval(function() {
+    function pwmCycle() {
+        if (!self.pwmEnabled) return;
+        
         // Включаем
-        exec('gpio write 0 1 2>/dev/null', function(error) {
-            if (error) {
-                exec('echo 1 > /sys/class/gpio/gpio17/value 2>/dev/null', function() {});
-            }
-        });
+        exec('gpio write 0 1', function() {});
         
         // Выключаем через onTime
         setTimeout(function() {
-            exec('gpio write 0 0 2>/dev/null', function(error) {
-                if (error) {
-                    exec('echo 0 > /sys/class/gpio/gpio17/value 2>/dev/null', function() {});
-                }
-            });
+            if (!self.pwmEnabled) return;
+            exec('gpio write 0 0', function() {});
         }, onTime);
-        
-    }, self.PWM_PERIOD_MS);
+    }
+    
+    // Запускаем PWM цикл
+    pwmCycle();
+    self.pwmInterval = setInterval(pwmCycle, self.PWM_PERIOD_MS);
 };
 
 FanController.prototype.startFanControl = function() {
@@ -514,9 +503,10 @@ FanController.prototype.startFanControl = function() {
             self.getSystemTemperature().then(function(temp) {
                 var newSpeed = self.calculateFanSpeed(temp);
                 
-                if (newSpeed !== self.currentSpeed) {
+                // Изменяем скорость только при значительном изменении (>2%)
+                if (Math.abs(newSpeed - self.currentSpeed) > 2) {
                     self.applyPWM(newSpeed);
-                    self.logger.info('FanController: ' + temp.toFixed(1) + '°C → ' + newSpeed + '%');
+                    self.logger.debug('FanController: ' + temp.toFixed(1) + '°C → ' + newSpeed + '%');
                 }
             }).fail(function(error) {
                 self.logger.error('FanController: Temperature read failed: ' + error);
@@ -537,6 +527,7 @@ FanController.prototype.stopFanControl = function() {
     
     self.logger.info('FanController: Stopping fan control');
     self.isRunning = false;
+    self.pwmEnabled = false;
     
     if (self.fanInterval) {
         clearInterval(self.fanInterval);
@@ -548,7 +539,9 @@ FanController.prototype.stopFanControl = function() {
         self.pwmInterval = null;
     }
     
-    self.applyPWM(0);
+    // Гарантированно выключаем вентилятор
+    exec('gpio write 0 0', function() {});
+    self.currentSpeed = 0;
 };
 
 FanController.prototype.cleanupGPIO = function() {
@@ -559,7 +552,7 @@ FanController.prototype.cleanupGPIO = function() {
     self.logger.info('FanController: Cleaning up GPIO');
     
     setTimeout(function() {
-        exec('gpio write 0 0 2>/dev/null', function() {});
+        exec('gpio write 0 0', function() {});
         exec('echo 0 > /sys/class/gpio/gpio17/value 2>/dev/null', function() {});
         exec('echo 17 > /sys/class/gpio/unexport 2>/dev/null', function() {});
     }, 1000);
@@ -610,7 +603,6 @@ FanController.prototype.onUninstall = function() {
     return libQ.resolve();
 };
 
-// Добавим метод для принудительного обновления UI
 FanController.prototype.pushState = function(state) {
     this.commandRouter.servicePushState(state, 'fancontroller');
 };

@@ -11,12 +11,12 @@ echo 17 > /sys/class/gpio/unexport 2>/dev/null || true
 
 echo "Removing plugin files..."
 # Удаляем все возможные пути установки плагина
-rm -rf "/data/plugins/system_controller/fancontroller-rpi3" 2>/dev/null || true
+rm -rf "/data/plugins/system_controller/fancontroller_beta" 2>/dev/null || true
 rm -rf "/data/plugins/system_controller/fancontroller" 2>/dev/null || true
 rm -rf "/data/plugins/system_controller/fan_controller" 2>/dev/null || true
 
 # Удаляем конфигурации
-rm -rf "/data/configuration/system_controller/fancontroller-rpi3" 2>/dev/null || true
+rm -rf "/data/configuration/system_controller/fancontroller_beta" 2>/dev/null || true
 rm -rf "/data/configuration/system_controller/fancontroller" 2>/dev/null || true
 rm -rf "/data/configuration/system_controller/fan_controller" 2>/dev/null || true
 

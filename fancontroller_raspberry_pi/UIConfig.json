@@ -15,7 +15,7 @@
           "element": "switch",
           "label": "Enable Fan Control",
           "description": "Enable automatic temperature control",
-          "value": true
+          "value": false
         },
         {
           "id": "min_temp",
