@@ -1,12 +1,12 @@
 {
   "name": "fancontroller-rpi3",
   "version": "3.1.3",
-  "description": "Fan Controller for Raspberry Pi",
+  "description": "Fan Controller for Raspberry Pi - GPIO 17, PWM 50Hz",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Smartas",
+  "author": "Smartas10",
   "license": "MIT",
   "volumio_info": {
     "prettyName": "Fan Controller",
@@ -16,7 +16,9 @@
     "architectures": ["arm", "armv7", "armhf"],
     "details": "Fan controller for Raspberry Pi - PWM 50Hz on GPIO 17",
     "version": "3.1.3",
-    "changelog": "Changed to GPIO 17 for better compatibility"
+    "changelog": "Changed to GPIO 17 for better compatibility",
+    "homepage": "",
+    "forum": ""
   },
   "engines": {
     "node": ">=12.0.0",
@@ -25,5 +27,9 @@
   "dependencies": {
     "kew": "^0.7.0",
     "v-conf": "^1.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
   }
 }
