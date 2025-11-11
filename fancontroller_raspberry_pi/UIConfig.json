@@ -2,7 +2,7 @@
   "page": {
     "label": "Fan Controller",
     "title": "Raspberry Pi Fan Control",
-    "description": "Automatic PWM control for Raspberry Pi - GPIO 17, 50Hz"
+    "description": "Hardware PWM control for Raspberry Pi - GPIO 18, 50Hz"
   },
   "sections": [
     {
@@ -77,7 +77,7 @@
           "element": "value",
           "label": "GPIO Pin",
           "description": "Hardware connection",
-          "value": "GPIO 17 (Pin 11)"
+          "value": "GPIO 18 (Pin 12)"
         },
         {
           "id": "platform",

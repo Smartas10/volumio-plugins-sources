@@ -1,7 +1,7 @@
 {
   "name": "fancontroller_beta",
-  "version": "3.1.4",
-  "description": "Fan Controller for Raspberry Pi - GPIO 17, PWM 50Hz",
+  "version": "3.1.5",
+  "description": "Fan Controller for Raspberry Pi - GPIO 18, Hardware PWM 50Hz",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,9 +14,9 @@
     "plugin_type": "system_controller",
     "boot_priority": 10,
     "architectures": ["arm", "armv7", "armhf"],
-    "details": "Fan controller for Raspberry Pi - PWM 50Hz on GPIO 17",
-    "version": "3.1.4",
-    "changelog": "Fixed PWM stability issues"
+    "details": "Fan controller for Raspberry Pi - Hardware PWM 50Hz on GPIO 18",
+    "version": "3.1.5",
+    "changelog": "Using hardware PWM on GPIO 18"
   },
   "engines": {
     "node": ">=12.0.0",

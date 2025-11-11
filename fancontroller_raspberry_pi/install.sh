@@ -2,7 +2,7 @@
 
 echo "================================================"
 echo "Fan Controller for Raspberry Pi"
-echo "GPIO 17 - PWM 50Hz - 20°C to 80°C"
+echo "GPIO 18 - Hardware PWM 50Hz - 20°C to 80°C"
 echo "================================================"
 
 # Проверка системы
@@ -30,7 +30,7 @@ if command -v gpio >/dev/null 2>&1; then
     echo "✓ wiringPi installed"
     gpio -v
 else
-    echo "⚠ wiringPi not available, using sysfs fallback"
+    echo "⚠ wiringPi not available"
 fi
 
 # Настройка GPIO прав
@@ -47,10 +47,10 @@ sudo mv /tmp/99-gpio.rules /etc/udev/rules.d/ 2>/dev/null || true
 sudo udevadm control --reload-rules 2>/dev/null || true
 sudo udevadm trigger 2>/dev/null || true
 
-# Инициализация GPIO 17
-echo "Initializing GPIO 17..."
-gpio mode 0 out 2>/dev/null || true
-gpio write 0 0 2>/dev/null || true
+# Инициализация GPIO 18 для PWM
+echo "Initializing GPIO 18 for PWM..."
+gpio mode 1 pwm 2>/dev/null || true
+gpio pwm 1 0 2>/dev/null || true
 
 # Проверка датчика температуры
 echo "Checking temperature sensor..."
@@ -75,7 +75,7 @@ echo "================================================"
 echo "INSTALLATION COMPLETE"
 echo "================================================"
 echo "Fan Controller installed successfully"
-echo "GPIO 17 (Physical Pin 11) - PWM 50Hz"
+echo "GPIO 18 (Physical Pin 12) - Hardware PWM 50Hz"
 echo "Temperature range: 20°C to 80°C"
 echo "Plugin will auto-start on boot"
 
