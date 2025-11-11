@@ -1,8 +1,8 @@
 {
   "page": {
-    "label": "Fan Controller - Raspberry Pi 3",
-    "title": "RPi3 Fan Control",
-    "description": "Automatic PWM control for Raspberry Pi 3 - GPIO 14, 50Hz"
+    "label": "Fan Controller",
+    "title": "Raspberry Pi Fan Control",
+    "description": "Automatic PWM control for Raspberry Pi - GPIO 14, 50Hz"
   },
   "sections": [
     {
@@ -55,7 +55,7 @@
           "id": "current_temp",
           "element": "value",
           "label": "CPU Temperature",
-          "description": "Current RPi3 temperature",
+          "description": "Current temperature",
           "value": "--"
         },
         {
@@ -84,7 +84,7 @@
           "element": "value",
           "label": "Platform",
           "description": "Device type",
-          "value": "Raspberry Pi 3"
+          "value": "--"
         },
         {
           "id": "temp_sensor",

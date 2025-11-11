@@ -1,7 +1,7 @@
 {
   "name": "fancontroller-rpi3",
-  "version": "3.1.0",
-  "description": "Fan Controller for Raspberry Pi 3 - GPIO 14, PWM 50Hz",
+  "version": "3.1.1",
+  "description": "Fan Controller for Raspberry Pi - GPIO 14, PWM 50Hz",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,17 +9,17 @@
   "author": "Smartas10",
   "license": "MIT",
   "volumio_info": {
-    "prettyName": "Fan Controller - RPi3",
+    "prettyName": "Fan Controller",
     "icon": "fa fa-thermometer-half",
     "plugin_type": "system_controller",
     "boot_priority": 15,
-    "architectures": ["arm", "armv7"],
-    "details": "Fan controller for Raspberry Pi 3 - PWM 50Hz on GPIO 14",
-    "version": "3.1.0",
-    "changelog": "Fixed temperature reading for Volumio"
+    "architectures": ["arm", "armv7", "armhf"],
+    "details": "Fan controller for Raspberry Pi - PWM 50Hz on GPIO 14",
+    "version": "3.1.1",
+    "changelog": "Fixed auto-enable and compatibility for Volumio 3"
   },
   "engines": {
-    "node": ">=14.0.0",
+    "node": ">=12.0.0",
     "volumio": ">=3.0.0"
   },
   "dependencies": {

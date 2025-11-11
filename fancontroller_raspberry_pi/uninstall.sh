@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "================================================"
-echo "Fan Controller Uninstallation - Raspberry Pi 3"
+echo "Fan Controller Uninstallation"
 echo "================================================"
 
 echo "Stopping fan control..."
@@ -10,9 +10,9 @@ echo 0 > /sys/class/gpio/gpio14/value 2>/dev/null || true
 echo 14 > /sys/class/gpio/unexport 2>/dev/null || true
 
 echo "Removing plugin files..."
-rm -rf "/data/plugins/system_controller/fancontroller-rpi3"
-rm -rf "/data/configuration/system_controller/fancontroller-rpi3"
-rm -rf "/var/log/fancontroller"
+rm -rf "/data/plugins/system_controller/fancontroller-rpi3" 2>/dev/null || true
+rm -rf "/data/configuration/system_controller/fancontroller-rpi3" 2>/dev/null || true
+rm -rf "/var/log/fancontroller" 2>/dev/null || true
 
-echo "Raspberry Pi 3 Fan Controller uninstalled!"
+echo "Fan Controller uninstalled successfully!"
 echo "pluginuninstallend"

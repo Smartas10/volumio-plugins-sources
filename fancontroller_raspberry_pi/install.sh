@@ -1,64 +1,82 @@
 #!/bin/bash
 
 echo "================================================"
-echo "Fan Controller for Raspberry Pi 3"
+echo "Fan Controller for Raspberry Pi"
 echo "GPIO 14 - PWM 50Hz - 20°C to 80°C"
 echo "================================================"
 
-# Проверка Raspberry Pi 3
-echo "Checking Raspberry Pi 3..."
-if ! grep -q "Raspberry Pi 3" /proc/device-tree/model 2>/dev/null; then
-    echo "WARNING: This plugin is optimized for Raspberry Pi 3"
-    echo "Detected: $(tr -d '\0' < /proc/device-tree/model)"
+# Проверка системы
+echo "System check:"
+MODEL=$(tr -d '\0' < /proc/device-tree/model 2>/dev/null || echo "Unknown Device")
+echo "Model: $MODEL"
+echo "Arch: $(uname -m)"
+echo "Volumio: $(cat /etc/os-release | grep VERSION= | head -1)"
+
+# Проверка Raspberry Pi
+if echo "$MODEL" | grep -q "Raspberry Pi"; then
+    echo "✓ Compatible: $MODEL"
+else
+    echo "⚠ WARNING: This plugin is optimized for Raspberry Pi"
+    echo "Continuing installation anyway..."
 fi
 
-# Установка wiringPi для Raspberry Pi 3
-echo "Installing wiringPi for Raspberry Pi 3..."
+# Установка wiringPi
+echo "Installing wiringPi..."
 sudo apt-get update
 sudo apt-get install -y wiringpi
-sudo usermod -a -G gpio volumio
-# Проверка установки wiringPi
-if ! command -v gpio >/dev/null 2>&1; then
-    echo "ERROR: wiringPi installation failed!"
-    echo "Please install manually: sudo apt-get install wiringpi"
-    exit 1
+
+# Проверка wiringPi
+if command -v gpio >/dev/null 2>&1; then
+    echo "✓ wiringPi installed"
+    gpio -v
+else
+    echo "⚠ wiringPi not available, using sysfs fallback"
 fi
 
-echo "wiringPi version:"
-gpio -v
+# Настройка GPIO прав
+echo "Setting up GPIO permissions..."
+sudo usermod -a -G gpio volumio 2>/dev/null || true
 
-# Проверка GPIO
-echo "Checking GPIO access..."
-if [ ! -d "/sys/class/gpio" ]; then
-    echo "ERROR: GPIO not available"
-    exit 1
-fi
+# Создание udev rules
+cat > /tmp/99-gpio.rules << 'EOF'
+SUBSYSTEM=="gpio", KERNEL=="gpiochip*", GROUP="gpio", MODE="0660"
+SUBSYSTEM=="gpio", KERNEL=="gpio*", GROUP="gpio", MODE="0660"
+EOF
 
-# Проверка датчика температуры через thermal zone
+sudo mv /tmp/99-gpio.rules /etc/udev/rules.d/ 2>/dev/null || true
+sudo udevadm control --reload-rules 2>/dev/null || true
+sudo udevadm trigger 2>/dev/null || true
+
+# Проверка датчика температуры
 echo "Checking temperature sensor..."
 if [ -f "/sys/class/thermal/thermal_zone0/temp" ]; then
-    echo "✓ Thermal zone temperature sensor available"
     TEMP=$(cat /sys/class/thermal/thermal_zone0/temp)
-    echo "Current temperature: $((TEMP/1000))°C"
+    echo "✓ Temperature sensor available: $((TEMP/1000))°C"
 else
-    echo "⚠ Thermal zone not found, using default temperature"
+    echo "⚠ Thermal zone not found"
 fi
 
 # Создание лог директории
+echo "Creating log directory..."
 mkdir -p /var/log/fancontroller
 chown volumio:volumio /var/log/fancontroller 2>/dev/null || true
 
 # Установка Node.js зависимостей
 echo "Installing Node.js dependencies..."
-npm install --production
+npm install --production --unsafe-perm
+
+# Инициализация GPIO
+echo "Initializing GPIO 14..."
+gpio mode 14 out 2>/dev/null || true
+gpio write 14 0 2>/dev/null || true
 
 echo ""
 echo "================================================"
 echo "INSTALLATION COMPLETE"
 echo "================================================"
-echo "Raspberry Pi 3 Fan Controller installed"
+echo "Fan Controller installed successfully"
 echo "GPIO 14 (Physical Pin 8) - PWM 50Hz"
 echo "Temperature range: 20°C to 80°C"
-echo "Web interface available in Volumio Settings"
+echo "Plugin will auto-start on boot"
 
 echo "plugininstallend"
