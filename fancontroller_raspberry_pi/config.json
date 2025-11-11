@@ -5,6 +5,6 @@
   "check_interval": 10,
   "fan_speed": 0,
   "use_pwm": true,
-  "gpio_pin": 18,
+  "gpio_pin": 17,
   "pwm_frequency": 50
 }

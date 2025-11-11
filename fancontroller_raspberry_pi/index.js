@@ -14,8 +14,8 @@ function FanController(context) {
     self.logger = self.context.logger;
     self.configManager = self.context.configManager;
     
-    // Конфигурация для Raspberry Pi - GPIO 18
-    self.GPIO_PIN = 18;
+    // Конфигурация для Raspberry Pi - GPIO 17
+    self.GPIO_PIN = 17;
     self.PWM_FREQUENCY = 50;
     self.PWM_PERIOD_MS = 20;
     self.MIN_TEMP = 20;
@@ -31,7 +31,7 @@ FanController.prototype.onVolumioStart = function() {
     var self = this;
     self.configFile = self.commandRouter.pluginManager.getConfigurationFile(self.context, 'config.json');
     
-    self.logger.info('FanController: Starting plugin initialization - GPIO 18');
+    self.logger.info('FanController: Starting plugin initialization - GPIO 17');
     
     // РЕГИСТРАЦИЯ КОНСОЛЬНЫХ КОМАНД
     try {
@@ -77,7 +77,7 @@ FanController.prototype.onVolumioStart = function() {
     }).then(function() {
         self.isInitialized = true;
         self.logger.info('FanController: Plugin started successfully on ' + self.getPlatformInfo());
-        self.commandRouter.pushConsoleMessage('FanController: Started successfully - GPIO 18');
+        self.commandRouter.pushConsoleMessage('FanController: Started successfully - GPIO 17');
     }).fail(function(error) {
         self.logger.error('FanController: Startup failed: ' + error);
         self.commandRouter.pushConsoleMessage('FanController: ERROR - ' + error);
@@ -135,7 +135,7 @@ FanController.prototype.setupDefaults = function() {
         check_interval: 10,
         fan_speed: 0,
         use_pwm: true,
-        gpio_pin: 18,  // Изменено на 18
+        gpio_pin: 17,
         pwm_frequency: 50
     };
     
@@ -161,7 +161,7 @@ FanController.prototype.getUIConfig = function() {
             current_temp: temp.toFixed(1),
             current_speed: speed,
             pwm_frequency: "50 Hz",
-            gpio_pin: "GPIO 18 (Pin 12)",  // Обновлено
+            gpio_pin: "GPIO 17 (Pin 11)",
             platform: self.getPlatformInfo(),
             temp_sensor: "thermal_zone0"
         };
@@ -179,7 +179,7 @@ FanController.prototype.getUIConfig = function() {
             current_temp: "--",
             current_speed: "--",
             pwm_frequency: "50 Hz",
-            gpio_pin: "GPIO 18 (Pin 12)",  // Обновлено
+            gpio_pin: "GPIO 17 (Pin 11)",
             platform: self.getPlatformInfo(),
             temp_sensor: "thermal_zone0"
         };
@@ -284,7 +284,7 @@ FanController.prototype.getStatus = function() {
             temperature: temp.toFixed(1) + '°C',
             speed: speed + '%',
             current_speed: self.currentSpeed + '%',
-            gpio: 'GPIO 18 (Pin 12)',  // Обновлено
+            gpio: 'GPIO 17 (Pin 11)',
             platform: self.getPlatformInfo(),
             pwm: '50Hz',
             temp_range: self.config.get('min_temp') + '°C - ' + self.config.get('max_temp') + '°C',
@@ -364,26 +364,26 @@ FanController.prototype.setupGPIO = function() {
     var self = this;
     var defer = libQ.defer();
     
-    self.logger.info('FanController: Setting up GPIO 18');
+    self.logger.info('FanController: Setting up GPIO 17');
     
     // Пробуем wiringPi сначала
-    exec('gpio mode ' + self.GPIO_PIN + ' out', function(error) {
+    exec('gpio mode 0 out', function(error) {
         if (error) {
             self.logger.warn('FanController: wiringPi failed, using sysfs');
             // Fallback to sysfs
-            exec('echo ' + self.GPIO_PIN + ' > /sys/class/gpio/export 2>/dev/null', function() {
+            exec('echo 17 > /sys/class/gpio/export 2>/dev/null', function() {
                 setTimeout(function() {
-                    exec('echo out > /sys/class/gpio/gpio18/direction 2>/dev/null', function() {
-                        exec('echo 0 > /sys/class/gpio/gpio18/value 2>/dev/null', function() {
-                            self.logger.info('FanController: GPIO 18 setup with sysfs');
+                    exec('echo out > /sys/class/gpio/gpio17/direction 2>/dev/null', function() {
+                        exec('echo 0 > /sys/class/gpio/gpio17/value 2>/dev/null', function() {
+                            self.logger.info('FanController: GPIO 17 setup with sysfs');
                             defer.resolve();
                         });
                     });
                 }, 100);
             });
         } else {
-            exec('gpio write ' + self.GPIO_PIN + ' 0', function() {
-                self.logger.info('FanController: GPIO 18 setup with wiringPi');
+            exec('gpio write 0 0', function() {
+                self.logger.info('FanController: GPIO 17 setup with wiringPi');
                 defer.resolve();
             });
         }
@@ -424,9 +424,9 @@ FanController.prototype.applyPWM = function(speed) {
     
     // 0% - выключен
     if (speed === 0) {
-        exec('gpio write ' + self.GPIO_PIN + ' 0 2>/dev/null', function(error) {
+        exec('gpio write 0 0 2>/dev/null', function(error) {
             if (error) {
-                exec('echo 0 > /sys/class/gpio/gpio18/value 2>/dev/null', function() {});
+                exec('echo 0 > /sys/class/gpio/gpio17/value 2>/dev/null', function() {});
             }
         });
         return;
@@ -434,9 +434,9 @@ FanController.prototype.applyPWM = function(speed) {
     
     // 100% - постоянно включен
     if (speed === 100) {
-        exec('gpio write ' + self.GPIO_PIN + ' 1 2>/dev/null', function(error) {
+        exec('gpio write 0 1 2>/dev/null', function(error) {
             if (error) {
-                exec('echo 1 > /sys/class/gpio/gpio18/value 2>/dev/null', function() {});
+                exec('echo 1 > /sys/class/gpio/gpio17/value 2>/dev/null', function() {});
             }
         });
         return;
@@ -448,17 +448,17 @@ FanController.prototype.applyPWM = function(speed) {
     
     self.pwmInterval = setInterval(function() {
         // Включаем
-        exec('gpio write ' + self.GPIO_PIN + ' 1 2>/dev/null', function(error) {
+        exec('gpio write 0 1 2>/dev/null', function(error) {
             if (error) {
-                exec('echo 1 > /sys/class/gpio/gpio18/value 2>/dev/null', function() {});
+                exec('echo 1 > /sys/class/gpio/gpio17/value 2>/dev/null', function() {});
             }
         });
         
         // Выключаем через onTime
         setTimeout(function() {
-            exec('gpio write ' + self.GPIO_PIN + ' 0 2>/dev/null', function(error) {
+            exec('gpio write 0 0 2>/dev/null', function(error) {
                 if (error) {
-                    exec('echo 0 > /sys/class/gpio/gpio18/value 2>/dev/null', function() {});
+                    exec('echo 0 > /sys/class/gpio/gpio17/value 2>/dev/null', function() {});
                 }
             });
         }, onTime);
@@ -538,9 +538,9 @@ FanController.prototype.cleanupGPIO = function() {
     self.logger.info('FanController: Cleaning up GPIO');
     
     setTimeout(function() {
-        exec('gpio write ' + self.GPIO_PIN + ' 0 2>/dev/null', function() {});
-        exec('echo 0 > /sys/class/gpio/gpio18/value 2>/dev/null', function() {});
-        exec('echo ' + self.GPIO_PIN + ' > /sys/class/gpio/unexport 2>/dev/null', function() {});
+        exec('gpio write 0 0 2>/dev/null', function() {});
+        exec('echo 0 > /sys/class/gpio/gpio17/value 2>/dev/null', function() {});
+        exec('echo 17 > /sys/class/gpio/unexport 2>/dev/null', function() {});
     }, 1000);
 };
 
