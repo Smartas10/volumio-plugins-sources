@@ -1,0 +1,112 @@
+{
+  "page": {
+    "label": "Fan Controller - Raspberry Pi",
+    "title": "Fan Controller Settings",
+    "description": "Control your Raspberry Pi fan via GPIO 14 (Pin 8) with PWM 50Hz"
+  },
+  "sections": [
+    {
+      "id": "control_section",
+      "element": "section",
+      "label": "Fan Control",
+      "elements": [
+        {
+          "id": "enabled",
+          "element": "switch",
+          "label": "Enable Fan Control",
+          "description": "Enable automatic temperature-based fan control",
+          "value": false
+        },
+        {
+          "id": "use_pwm",
+          "element": "switch", 
+          "label": "PWM Mode",
+          "description": "Use PWM for smooth speed control (recommended)",
+          "value": true
+        }
+      ]
+    },
+    {
+      "id": "temperature_section", 
+      "element": "section",
+      "label": "Temperature Settings",
+      "elements": [
+        {
+          "id": "min_temp",
+          "element": "number",
+          "label": "Minimum Temperature (°C)",
+          "description": "Fan starts at this temperature",
+          "min": 15,
+          "max": 40,
+          "value": 20
+        },
+        {
+          "id": "max_temp",
+          "element": "number",
+          "label": "Maximum Temperature (°C)", 
+          "description": "Fan runs at full speed at this temperature",
+          "min": 30,
+          "max": 70,
+          "value": 50
+        },
+        {
+          "id": "check_interval",
+          "element": "number",
+          "label": "Check Interval (seconds)",
+          "description": "How often to check temperature",
+          "min": 5,
+          "max": 60,
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "manual_section",
+      "element": "section", 
+      "label": "Manual Control",
+      "elements": [
+        {
+          "id": "fan_speed",
+          "element": "slider",
+          "label": "Manual Fan Speed (%)",
+          "description": "Set fan speed manually (0-100%)",
+          "min": 0,
+          "max": 100,
+          "value": 0,
+          "display": {
+            "type": "valueLabel",
+            "unit": "%"
+          }
+        }
+      ]
+    },
+    {
+      "id": "status_section",
+      "element": "section",
+      "label": "Current Status", 
+      "elements": [
+        {
+          "id": "current_temp",
+          "element": "value",
+          "label": "Current Temperature",
+          "description": "CPU temperature",
+          "value": "--"
+        },
+        {
+          "id": "current_speed", 
+          "element": "value",
+          "label": "Current Fan Speed",
+          "description": "Actual fan speed",
+          "value": "--"
+        },
+        {
+          "id": "gpio_info",
+          "element": "value",
+          "label": "GPIO Configuration", 
+          "description": "Hardware connection",
+          "value": "GPIO 14 (Physical Pin 8)"
+        }
+      ]
+    }
+  ]
+}
