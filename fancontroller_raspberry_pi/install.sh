@@ -16,7 +16,7 @@ fi
 echo "Installing wiringPi for Raspberry Pi 3..."
 sudo apt-get update
 sudo apt-get install -y wiringpi
-
+sudo usermod -a -G gpio volumio
 # Проверка установки wiringPi
 if ! command -v gpio >/dev/null 2>&1; then
     echo "ERROR: wiringPi installation failed!"
