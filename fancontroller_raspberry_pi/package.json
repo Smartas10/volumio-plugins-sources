@@ -1,5 +1,5 @@
 {
-  "name": "fancontroller-rpi3",
+  "name": "fancontroller_beta",
   "version": "3.1.3",
   "description": "Fan Controller for Raspberry Pi - GPIO 17, PWM 50Hz",
   "main": "index.js",
