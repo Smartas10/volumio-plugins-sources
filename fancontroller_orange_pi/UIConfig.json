@@ -1,168 +1,97 @@
 {
   "page": {
-    "label": "Fan Controller - Orange Pi PC",
-    "title": "Fan Controller",
-    "description": "Correct GPIO mapping: Pin 8 = GPIO 102 on Orange Pi PC"
+    "label": "Fan Controller",
+    "title": "Orange Pi PC Fan Control", 
+    "description": "Automatic PWM control for Orange Pi PC - GPIO 13 (Physical Pin 8), 50Hz"
   },
   "sections": [
     {
-      "id": "settings_section",
+      "id": "control_section",
       "element": "section",
-      "label": "Basic Settings",
-      "icon": "fa fa-cog",
-      "onSave": {
-        "type": "controller",
-        "endpoint": "fancontroller/setUiConfig"
-      },
-      "content": [
+      "label": "Fan Control",
+      "elements": [
         {
           "id": "enabled",
           "element": "switch",
           "label": "Enable Fan Control",
-          "value": false,
-          "onClick": {
-            "type": "controller",
-            "endpoint": "fancontroller/setUiConfig"
-          }
-        },
-        {
-          "id": "gpio_pin",
-          "element": "input",
-          "label": "GPIO Pin Number",
-          "type": "number",
-          "attributes": {
-            "min": 102,
-            "max": 102,
-            "readonly": true
-          },
-          "value": 102,
-          "description": "FIXED: GPIO 102 = Physical Pin 8 on Orange Pi PC"
+          "description": "Enable automatic temperature control",
+          "value": true
         },
         {
           "id": "min_temp",
-          "element": "input",
-          "label": "Minimum Temperature (°C)",
-          "type": "number",
-          "attributes": {
-            "min": 35,
-            "max": 60
-          },
-          "value": 45,
-          "description": "Fan turns on at this temperature"
+          "element": "number",
+          "label": "Min Temperature (°C)",
+          "description": "Fan starts at this temperature",
+          "min": 35,
+          "max": 50,
+          "value": 40
         },
         {
           "id": "max_temp",
-          "element": "input",
-          "label": "Maximum Temperature (°C)",
-          "type": "number",
-          "attributes": {
-            "min": 50,
-            "max": 80
-          },
-          "value": 65,
-          "description": "Fan runs at full speed at this temperature"
+          "element": "number",
+          "label": "Max Temperature (°C)",
+          "description": "Full speed at this temperature",
+          "min": 60,
+          "max": 85,
+          "value": 70
         },
         {
           "id": "check_interval",
-          "element": "input",
+          "element": "number",
           "label": "Check Interval (seconds)",
-          "type": "number",
-          "attributes": {
-            "min": 5,
-            "max": 60
-          },
-          "value": 10,
-          "description": "How often to check temperature (5-60 seconds)"
-        },
-        {
-          "id": "use_pwm",
-          "element": "switch",
-          "label": "Enable PWM Speed Control",
-          "value": false,
-          "description": "EXPERIMENTAL: Use PWM for variable speed control"
-        }
-      ]
-    },
-    {
-      "id": "manual_section",
-      "element": "section",
-      "label": "Manual Control",
-      "icon": "fa fa-sliders",
-      "content": [
-        {
-          "id": "fan_speed",
-          "element": "slider",
-          "label": "Fan Speed (%)",
-          "min": 0,
-          "max": 100,
-          "step": 10,
-          "value": 0,
-          "attributes": {
-            "showValue": true
-          },
-          "onChange": {
-            "type": "controller",
-            "endpoint": "fancontroller/setFanSpeed"
-          },
-          "description": "Manual fan speed control (overrides automatic control)"
+          "description": "Temperature check frequency",
+          "min": 5,
+          "max": 60,
+          "value": 10
         }
       ]
     },
     {
       "id": "status_section",
       "element": "section",
-      "label": "System Status - Orange Pi PC",
-      "icon": "fa fa-info-circle",
-      "content": [
+      "label": "System Status",
+      "elements": [
         {
           "id": "current_temp",
-          "element": "display",
-          "label": "Current Temperature",
-          "value": "Unknown"
+          "element": "value",
+          "label": "CPU Temperature",
+          "description": "Current temperature",
+          "value": "--"
         },
         {
           "id": "current_speed",
-          "element": "display",
-          "label": "Current Fan Speed",
-          "value": "0%"
+          "element": "value",
+          "label": "Fan Speed",
+          "description": "Current PWM duty cycle",
+          "value": "--"
         },
         {
-          "id": "gpio_info",
-          "element": "display",
-          "label": "GPIO Configuration",
-          "value": "GPIO 102 - Physical Pin 8 (CORRECT)"
+          "id": "pwm_frequency",
+          "element": "value",
+          "label": "PWM Frequency",
+          "description": "Signal frequency",
+          "value": "50 Hz"
         },
         {
-          "id": "connection_info",
-          "element": "display",
-          "label": "Connection Guide",
-          "value": "Fan+: Pin 8, Fan-: Pin 9(GND)"
-        }
-      ]
-    },
-    {
-      "id": "compatibility_section",
-      "element": "section",
-      "label": "Compatibility Information",
-      "icon": "fa fa-check-circle",
-      "content": [
-        {
-          "id": "compatibility_info",
-          "element": "display",
-          "label": "Plugin Type",
-          "value": "system_controller (No hardware conflicts)"
+          "id": "gpio_pin",
+          "element": "value",
+          "label": "GPIO Pin",
+          "description": "Hardware connection",
+          "value": "GPIO 13 (Physical Pin 8)"
         },
         {
-          "id": "conflict_check",
-          "element": "display",
-          "label": "Conflict Status",
-          "value": "No known conflicts detected"
+          "id": "platform",
+          "element": "value",
+          "label": "Platform",
+          "description": "Device type",
+          "value": "--"
         },
         {
-          "id": "gpio_safety",
-          "element": "display",
-          "label": "GPIO Safety",
-          "value": "GPIO 102 (Pin 8) is correct for Orange Pi PC"
+          "id": "temp_sensor",
+          "element": "value",
+          "label": "Temperature Sensor",
+          "description": "Temperature source",
+          "value": "thermal_zone0"
         }
       ]
     }

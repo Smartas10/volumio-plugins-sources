@@ -1,7 +1,7 @@
 {
-  "name": "fancontroller-orange-pi-pc",
-  "version": "2.0.1",
-  "description": "Fan Controller for Orange Pi PC - GPIO 102 (Pin 8) - Correct GPIO mapping",
+  "name": "fancontroller_orangepi_gpio13",
+  "version": "4.1.0",
+  "description": "Fan Controller for Orange Pi PC - GPIO 13, PWM 50Hz",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,22 +9,17 @@
   "author": "Smartas10",
   "license": "MIT",
   "volumio_info": {
-    "prettyName": "Fan Controller - Orange Pi PC",
+    "prettyName": "Fan Controller (Orange Pi GPIO13)",
     "icon": "fa fa-thermometer-half",
     "plugin_type": "system_controller",
-    "boot_priority": 15,
-    "architectures": [
-      "arm",
-      "armv7",
-      "armv8"
-    ],
-    "website": "https://github.com/Smartas10/OrangePi-FanController",
-    "details": "Correct fan controller for Orange Pi PC using GPIO 102 (Pin 8)",
-    "version": "2.0.1",
-    "changelog": "Fixed GPIO mapping: Pin 8 = GPIO 102 on Orange Pi PC"
+    "boot_priority": 10,
+    "architectures": ["arm", "armv7", "armhf"],
+    "details": "Fan controller for Orange Pi PC - PWM 50Hz on GPIO 13 (Pin 8)",
+    "version": "4.1.0",
+    "changelog": "Optimized for Orange Pi PC GPIO 13"
   },
   "engines": {
-    "node": ">=14.0.0",
+    "node": ">=12.0.0",
     "volumio": ">=3.0.0"
   },
   "dependencies": {
