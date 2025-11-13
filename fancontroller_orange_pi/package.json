@@ -1,7 +1,7 @@
 {
   "name": "fancontroller_orangepi_gpio10",
-  "version": "4.1.0",
-  "description": "Fan Controller for Orange Pi PC - GPIO 10, PWM 50Hz",
+  "version": "4.2.0",
+  "description": "Fan Controller for Orange Pi PC - GPIO 10, Auto PWM Detection",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,9 +14,9 @@
     "plugin_type": "system_controller",
     "boot_priority": 10,
     "architectures": ["arm", "armv7", "armhf"],
-    "details": "Fan controller for Orange Pi PC - PWM 50Hz on GPIO 10 (Pin 35)",
-    "version": "4.1.0",
-    "changelog": "Optimized for Orange Pi PC GPIO 10"
+    "details": "Fan controller for Orange Pi PC - Auto PWM detection on GPIO 10 (Pin 35)",
+    "version": "4.2.0",
+    "changelog": "Improved PWM detection and error handling"
   },
   "engines": {
     "node": ">=12.0.0",

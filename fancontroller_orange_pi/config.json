@@ -1,10 +1,9 @@
 {
   "enabled": true,
-  "min_temp": 40,
+  "min_temp": 46,
   "max_temp": 70,
   "check_interval": 10,
   "fan_speed": 0,
-  "use_pwm": true,
   "gpio_pin": 10,
   "pwm_frequency": 50
 }
