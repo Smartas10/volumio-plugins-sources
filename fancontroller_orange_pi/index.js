@@ -18,8 +18,8 @@ function FanController(context) {
     self.GPIO_PIN = 10;
     self.PWM_CHIP = 0;          // PWM контроллер
     self.PWM_CHANNEL = 0;       // Канал PWM
-    self.PWM_FREQUENCY = 50;    // 50 Hz
-    self.PWM_PERIOD_NS = 20000000; // 20ms в наносекундах
+    self.PWM_FREQUENCY = 25000; // 25 kHz
+    self.PWM_PERIOD_NS = 40000; // 25kHz = 40,000ns период (1/25000 = 0.00004s = 40,000ns)
     self.MIN_TEMP = 40;
     self.MAX_TEMP = 70;
     
@@ -34,7 +34,7 @@ FanController.prototype.onVolumioStart = function() {
     var self = this;
     self.configFile = self.commandRouter.pluginManager.getConfigurationFile(self.context, 'config.json');
     
-    self.logger.info('FanController: Starting plugin initialization - Orange Pi PC Hardware PWM');
+    self.logger.info('FanController: Starting plugin initialization - Orange Pi PC Hardware PWM 25kHz');
     
     try {
         if (self.commandRouter.consoleCommandService) {
@@ -80,7 +80,7 @@ FanController.prototype.onVolumioStart = function() {
     }).then(function() {
         self.isInitialized = true;
         self.logger.info('FanController: Plugin started successfully');
-        self.commandRouter.pushConsoleMessage('FanController: Started successfully - Hardware PWM 50Hz');
+        self.commandRouter.pushConsoleMessage('FanController: Started successfully - Hardware PWM 25kHz');
     }).fail(function(error) {
         self.logger.error('FanController: Startup failed: ' + error);
         self.commandRouter.pushConsoleMessage('FanController: ERROR - ' + error);
@@ -141,7 +141,7 @@ FanController.prototype.setupDefaults = function() {
         fan_speed: 0,
         use_pwm: true,
         gpio_pin: 10,
-        pwm_frequency: 50
+        pwm_frequency: 25000  // 25 kHz
     };
     
     Object.keys(defaults).forEach(function(key) {
@@ -163,7 +163,7 @@ FanController.prototype.getUIConfig = function() {
             check_interval: self.config.get('check_interval'),
             current_temp: temp.toFixed(1),
             current_speed: self.currentSpeed,
-            pwm_frequency: "50 Hz (Hardware)",
+            pwm_frequency: "25 kHz (Hardware)",
             gpio_pin: "GPIO 10 (Physical Pin 35)",
             platform: self.getPlatformInfo(),
             temp_sensor: "thermal_zone0",
@@ -179,7 +179,7 @@ FanController.prototype.getUIConfig = function() {
             check_interval: self.config.get('check_interval'),
             current_temp: "--",
             current_speed: self.currentSpeed,
-            pwm_frequency: "50 Hz (Hardware)",
+            pwm_frequency: "25 kHz (Hardware)",
             gpio_pin: "GPIO 10 (Physical Pin 35)",
             platform: self.getPlatformInfo(),
             temp_sensor: "thermal_zone0",
@@ -291,7 +291,7 @@ FanController.prototype.getStatus = function() {
             current_speed: self.currentSpeed + '%',
             gpio: 'GPIO 10 (Physical Pin 35)',
             platform: self.getPlatformInfo(),
-            pwm: '50Hz Hardware PWM',
+            pwm: '25kHz Hardware PWM',
             temp_range: self.config.get('min_temp') + '°C - ' + self.config.get('max_temp') + '°C',
             temp_sensor: 'thermal_zone0',
             initialized: self.isInitialized
@@ -373,14 +373,14 @@ FanController.prototype.setupHardwarePWM = function() {
     var self = this;
     var defer = libQ.defer();
     
-    self.logger.info('FanController: Setting up Hardware PWM on GPIO 10');
+    self.logger.info('FanController: Setting up Hardware PWM 25kHz on GPIO 10');
     
     // Активируем аппаратный PWM через sysfs
     var commands = [
         // Экспортируем PWM
         'echo ' + self.PWM_CHANNEL + ' > /sys/class/pwm/pwmchip' + self.PWM_CHIP + '/export 2>/dev/null || true',
         'sleep 1',
-        // Устанавливаем период 20ms (50Hz)
+        // Устанавливаем период 40,000ns (25kHz)
         'echo ' + self.PWM_PERIOD_NS + ' > /sys/class/pwm/pwmchip' + self.PWM_CHIP + '/pwm' + self.PWM_CHANNEL + '/period',
         // Начальная скважность 0
         'echo 0 > /sys/class/pwm/pwmchip' + self.PWM_CHIP + '/pwm' + self.PWM_CHANNEL + '/duty_cycle',
@@ -393,7 +393,7 @@ FanController.prototype.setupHardwarePWM = function() {
             self.logger.warn('FanController: Hardware PWM not available, using software fallback');
             self.pwmEnabled = false;
         } else {
-            self.logger.info('FanController: Hardware PWM activated successfully');
+            self.logger.info('FanController: Hardware PWM 25kHz activated successfully');
             self.pwmEnabled = true;
         }
         defer.resolve();
@@ -421,54 +421,23 @@ FanController.prototype.applyHardwarePWM = function(speed) {
     self.currentSpeed = speed;
     self.config.set('fan_speed', speed);
     
-    self.logger.info('FanController: Applying Hardware PWM ' + speed + '% - 50Hz');
+    self.logger.info('FanController: Applying Hardware PWM ' + speed + '% - 25kHz');
     
     if (self.pwmEnabled) {
-        // Аппаратный PWM
+        // Аппаратный PWM 25kHz
         var dutyCycle = Math.round((speed / 100) * self.PWM_PERIOD_NS);
         exec('echo ' + dutyCycle + ' > /sys/class/pwm/pwmchip' + self.PWM_CHIP + '/pwm' + self.PWM_CHANNEL + '/duty_cycle', function() {});
     } else {
-        // Программный fallback
+        // Программный fallback (не рекомендуется для 25kHz)
         if (speed === 0) {
             exec('echo 0 > /sys/class/gpio/gpio' + self.GPIO_PIN + '/value', function() {});
         } else if (speed === 100) {
             exec('echo 1 > /sys/class/gpio/gpio' + self.GPIO_PIN + '/value', function() {});
         } else {
-            // Простой ШИМ через GPIO
-            self.applySoftwarePWM(speed);
-        }
-    }
-};
-
-FanController.prototype.applySoftwarePWM = function(speed) {
-    var self = this;
-    
-    // Останавливаем предыдущий ШИМ
-    if (self.pwmInterval) {
-        clearInterval(self.pwmInterval);
-    }
-    
-    var periodMs = 20; // 50Hz
-    var onTime = Math.max(1, Math.round((speed / 100) * periodMs));
-    var offTime = periodMs - onTime;
-    
-    var state = 0;
-    var lastSwitch = Date.now();
-    
-    self.pwmInterval = setInterval(function() {
-        var now = Date.now();
-        var elapsed = now - lastSwitch;
-        
-        if (state === 0 && elapsed >= offTime) {
+            self.logger.warn('FanController: Software PWM not suitable for 25kHz, using 100%');
             exec('echo 1 > /sys/class/gpio/gpio' + self.GPIO_PIN + '/value', function() {});
-            state = 1;
-            lastSwitch = now;
-        } else if (state === 1 && elapsed >= onTime) {
-            exec('echo 0 > /sys/class/gpio/gpio' + self.GPIO_PIN + '/value', function() {});
-            state = 0;
-            lastSwitch = now;
         }
-    }, 1);
+    }
 };
 
 FanController.prototype.startFanControl = function() {
@@ -490,7 +459,7 @@ FanController.prototype.startFanControl = function() {
     // Настраиваем GPIO как fallback
     exec('echo ' + self.GPIO_PIN + ' > /sys/class/gpio/export 2>/dev/null; sleep 1; echo out > /sys/class/gpio/gpio' + self.GPIO_PIN + '/direction', function() {
         self.setupHardwarePWM().then(function() {
-            self.logger.info('FanController: Starting fan control - ' + (self.pwmEnabled ? 'Hardware PWM' : 'Software PWM'));
+            self.logger.info('FanController: Starting fan control - ' + (self.pwmEnabled ? 'Hardware PWM 25kHz' : 'Software fallback'));
             self.isRunning = true;
             
             self.getSystemTemperature().then(function(temp) {
@@ -527,11 +496,6 @@ FanController.prototype.stopFanControl = function() {
     if (self.fanInterval) {
         clearInterval(self.fanInterval);
         self.fanInterval = null;
-    }
-    
-    if (self.pwmInterval) {
-        clearInterval(self.pwmInterval);
-        self.pwmInterval = null;
     }
     
     // Выключаем PWM
