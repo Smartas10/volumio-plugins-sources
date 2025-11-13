@@ -8,6 +8,12 @@ echo "Stopping fan control..."
 echo 0 > /sys/class/gpio/gpio10/value 2>/dev/null || true
 echo 10 > /sys/class/gpio/unexport 2>/dev/null || true
 
+# Очистка PWM
+echo "Cleaning up PWM..."
+echo 0 > /sys/class/pwm/pwmchip0/pwm0/enable 2>/dev/null || true
+echo 0 > /sys/class/pwm/pwmchip0/pwm0/duty_cycle 2>/dev/null || true
+echo 0 > /sys/class/pwm/pwmchip0/unexport 2>/dev/null || true
+
 echo "Removing plugin files..."
 rm -rf "/data/plugins/system_controller/fancontroller_orangepi_gpio10" 2>/dev/null || true
 rm -rf "/data/plugins/system_controller/fancontroller_orangepi" 2>/dev/null || true

@@ -2,7 +2,7 @@
 
 echo "================================================"
 echo "Fan Controller for Orange Pi PC"
-echo "GPIO 10 (Physical Pin 35) - PWM 50Hz - 40°C to 70°C"
+echo "GPIO 10 (Physical Pin 35) - Hardware PWM 50Hz - 40°C to 70°C"
 echo "================================================"
 
 # Проверка системы
@@ -39,9 +39,28 @@ sudo mv /tmp/99-gpio.rules /etc/udev/rules.d/ 2>/dev/null || true
 sudo udevadm control --reload-rules 2>/dev/null || true
 sudo udevadm trigger 2>/dev/null || true
 
-# Инициализация GPIO 10
+# Активация PWM
+echo "Enabling PWM support..."
+if [ -d "/sys/class/pwm" ]; then
+    echo "✓ PWM controller detected"
+    # Активируем PWM
+    echo 0 > /sys/class/pwm/pwmchip0/export 2>/dev/null || true
+    sleep 1
+    if [ -d "/sys/class/pwm/pwmchip0/pwm0" ]; then
+        echo "✓ Hardware PWM activated successfully"
+        # Настраиваем PWM 50Hz
+        echo 20000000 > /sys/class/pwm/pwmchip0/pwm0/period 2>/dev/null || true
+        echo 0 > /sys/class/pwm/pwmchip0/pwm0/duty_cycle 2>/dev/null || true
+        echo 1 > /sys/class/pwm/pwmchip0/pwm0/enable 2>/dev/null || true
+    else
+        echo "⚠ PWM channel setup failed, using software fallback"
+    fi
+else
+    echo "⚠ Hardware PWM not available, using software PWM"
+fi
+
+# Инициализация GPIO 10 как fallback
 echo "Initializing GPIO 10 (Physical Pin 35)..."
-# Экспортируем GPIO через sysfs
 echo 10 > /sys/class/gpio/export 2>/dev/null || true
 sleep 1
 echo out > /sys/class/gpio/gpio10/direction 2>/dev/null || true
@@ -59,6 +78,16 @@ else
     echo "⚠ Thermal zone not found, using fallback"
 fi
 
+# Проверка доступности PWM
+echo "Checking PWM capabilities..."
+if [ -d "/sys/class/pwm/pwmchip0/pwm0" ]; then
+    echo "✓ Hardware PWM: Available (50Hz)"
+    PWM_TYPE="Hardware"
+else
+    echo "✓ Software PWM: Available (50Hz)"
+    PWM_TYPE="Software"
+fi
+
 # Создание лог директории
 echo "Creating log directory..."
 mkdir -p /var/log/fancontroller
@@ -73,13 +102,20 @@ echo "================================================"
 echo "INSTALLATION COMPLETE"
 echo "================================================"
 echo "Fan Controller installed successfully"
-echo "GPIO 10 (Physical Pin 35) - PWM 50Hz"
+echo "GPIO 10 (Physical Pin 35) - ${PWM_TYPE} PWM 50Hz"
 echo "Temperature range: 40°C to 70°C"
 echo "Plugin will auto-start on boot"
 echo ""
 echo "Wiring:"
-echo "  - Fan VCC to 5V Pin"
-echo "  - Fan GND to GND Pin" 
+echo "  - Fan VCC to 5V Pin (2 or 4)"
+echo "  - Fan GND to GND Pin (6, 9, 14, 20, 25, 30, 34, 39)" 
 echo "  - Fan PWM/Signal to Physical Pin 35 (GPIO 10)"
+echo ""
+echo "PWM Type: ${PWM_TYPE}"
+if [ "$PWM_TYPE" = "Hardware" ]; then
+    echo "✓ Hardware PWM provides stable 50Hz frequency"
+else
+    echo "⚠ Software PWM may have frequency variations"
+fi
 
 echo "plugininstallend"
