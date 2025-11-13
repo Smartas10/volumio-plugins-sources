@@ -1,6 +1,6 @@
 {
-  "id": "fancontroller_orangepi_gpio13",
-  "name": "Fan Controller (Orange Pi GPIO13)",
+  "id": "fancontroller_orangepi_gpio10",
+  "name": "Fan Controller (Orange Pi GPIO10)",
   "version": "4.1.0",
   "type": "system_controller",
   "uninstall_script": "uninstall.sh"

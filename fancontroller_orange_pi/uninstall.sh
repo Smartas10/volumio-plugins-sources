@@ -1,21 +1,21 @@
 #!/bin/bash
 
 echo "================================================"
-echo "Fan Controller Uninstallation (Orange Pi PC GPIO13)"
+echo "Fan Controller Uninstallation (Orange Pi PC GPIO10)"
 echo "================================================"
 
 echo "Stopping fan control..."
-echo 0 > /sys/class/gpio/gpio13/value 2>/dev/null || true
-echo 13 > /sys/class/gpio/unexport 2>/dev/null || true
+echo 0 > /sys/class/gpio/gpio10/value 2>/dev/null || true
+echo 10 > /sys/class/gpio/unexport 2>/dev/null || true
 
 echo "Removing plugin files..."
 # Удаляем плагин
-rm -rf "/data/plugins/system_controller/fancontroller_orangepi_gpio13" 2>/dev/null || true
+rm -rf "/data/plugins/system_controller/fancontroller_orangepi_gpio10" 2>/dev/null || true
 rm -rf "/data/plugins/system_controller/fancontroller_orangepi" 2>/dev/null || true
 rm -rf "/data/plugins/system_controller/fancontroller_beta" 2>/dev/null || true
 
 # Удаляем конфигурации
-rm -rf "/data/configuration/system_controller/fancontroller_orangepi_gpio13" 2>/dev/null || true
+rm -rf "/data/configuration/system_controller/fancontroller_orangepi_gpio10" 2>/dev/null || true
 rm -rf "/data/configuration/system_controller/fancontroller_orangepi" 2>/dev/null || true
 rm -rf "/data/configuration/system_controller/fancontroller_beta" 2>/dev/null || true
 

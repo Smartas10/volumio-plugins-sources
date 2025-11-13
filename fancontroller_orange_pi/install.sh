@@ -2,7 +2,7 @@
 
 echo "================================================"
 echo "Fan Controller for Orange Pi PC"
-echo "GPIO 13 (Physical Pin 8) - PWM 50Hz - 40°C to 70°C"
+echo "GPIO 10 (Physical Pin 35) - PWM 50Hz - 40°C to 70°C"
 echo "================================================"
 
 # Проверка системы
@@ -39,13 +39,13 @@ sudo mv /tmp/99-gpio.rules /etc/udev/rules.d/ 2>/dev/null || true
 sudo udevadm control --reload-rules 2>/dev/null || true
 sudo udevadm trigger 2>/dev/null || true
 
-# Инициализация GPIO 13
-echo "Initializing GPIO 13 (Physical Pin 8)..."
+# Инициализация GPIO 10
+echo "Initializing GPIO 10 (Physical Pin 35)..."
 # Экспортируем GPIO через sysfs
-echo 13 > /sys/class/gpio/export 2>/dev/null || true
+echo 10 > /sys/class/gpio/export 2>/dev/null || true
 sleep 1
-echo out > /sys/class/gpio/gpio13/direction 2>/dev/null || true
-echo 0 > /sys/class/gpio/gpio13/value 2>/dev/null || true
+echo out > /sys/class/gpio/gpio10/direction 2>/dev/null || true
+echo 0 > /sys/class/gpio/gpio10/value 2>/dev/null || true
 
 # Проверка датчика температуры
 echo "Checking temperature sensor..."
@@ -73,13 +73,13 @@ echo "================================================"
 echo "INSTALLATION COMPLETE"
 echo "================================================"
 echo "Fan Controller installed successfully"
-echo "GPIO 13 (Physical Pin 8) - PWM 50Hz"
+echo "GPIO 10 (Physical Pin 35) - PWM 50Hz"
 echo "Temperature range: 40°C to 70°C"
 echo "Plugin will auto-start on boot"
 echo ""
 echo "Wiring:"
 echo "  - Fan VCC to 5V Pin"
 echo "  - Fan GND to GND Pin" 
-echo "  - Fan PWM/Signal to Physical Pin 8 (GPIO 13)"
+echo "  - Fan PWM/Signal to Physical Pin 35 (GPIO 10)"
 
 echo "plugininstallend"

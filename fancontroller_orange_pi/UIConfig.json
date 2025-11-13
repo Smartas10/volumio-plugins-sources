@@ -2,7 +2,7 @@
   "page": {
     "label": "Fan Controller",
     "title": "Orange Pi PC Fan Control", 
-    "description": "Automatic PWM control for Orange Pi PC - GPIO 13 (Physical Pin 8), 50Hz"
+    "description": "Automatic PWM control for Orange Pi PC - GPIO 10 (Physical Pin 35), 50Hz"
   },
   "sections": [
     {
@@ -77,7 +77,7 @@
           "element": "value",
           "label": "GPIO Pin",
           "description": "Hardware connection",
-          "value": "GPIO 13 (Physical Pin 8)"
+          "value": "GPIO 10 (Physical Pin 35)"
         },
         {
           "id": "platform",

@@ -1,7 +1,7 @@
 {
-  "name": "fancontroller_orangepi_gpio13",
+  "name": "fancontroller_orangepi_gpio10",
   "version": "4.1.0",
-  "description": "Fan Controller for Orange Pi PC - GPIO 13, PWM 50Hz",
+  "description": "Fan Controller for Orange Pi PC - GPIO 10, PWM 50Hz",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,14 +9,14 @@
   "author": "Smartas10",
   "license": "MIT",
   "volumio_info": {
-    "prettyName": "Fan Controller (Orange Pi GPIO13)",
+    "prettyName": "Fan Controller (Orange Pi GPIO10)",
     "icon": "fa fa-thermometer-half",
     "plugin_type": "system_controller",
     "boot_priority": 10,
     "architectures": ["arm", "armv7", "armhf"],
-    "details": "Fan controller for Orange Pi PC - PWM 50Hz on GPIO 13 (Pin 8)",
+    "details": "Fan controller for Orange Pi PC - PWM 50Hz on GPIO 10 (Pin 35)",
     "version": "4.1.0",
-    "changelog": "Optimized for Orange Pi PC GPIO 13"
+    "changelog": "Optimized for Orange Pi PC GPIO 10"
   },
   "engines": {
     "node": ">=12.0.0",

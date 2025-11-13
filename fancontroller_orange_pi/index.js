@@ -14,9 +14,9 @@ function FanController(context) {
     self.logger = self.context.logger;
     self.configManager = self.context.configManager;
     
-    // Конфигурация для Orange Pi PC - GPIO 13
-    self.GPIO_PIN = 13; // Orange Pi PC GPIO 13
-    self.GPIO_PIN_SYSFS = 13; // Для sysfs
+    // Конфигурация для Orange Pi PC - GPIO 10
+    self.GPIO_PIN = 10; // Orange Pi PC GPIO 10
+    self.GPIO_PIN_SYSFS = 10; // Для sysfs
     self.PWM_FREQUENCY = 50;
     self.PWM_PERIOD_MS = 20; // 50Hz = 20ms period
     self.MIN_TEMP = 40;
@@ -34,7 +34,7 @@ FanController.prototype.onVolumioStart = function() {
     var self = this;
     self.configFile = self.commandRouter.pluginManager.getConfigurationFile(self.context, 'config.json');
     
-    self.logger.info('FanController: Starting plugin initialization - Orange Pi PC GPIO 13');
+    self.logger.info('FanController: Starting plugin initialization - Orange Pi PC GPIO 10');
     
     // РЕГИСТРАЦИЯ КОНСОЛЬНЫХ КОМАНД - С ЗАЩИТОЙ ОТ ОШИБОК
     try {
@@ -84,7 +84,7 @@ FanController.prototype.onVolumioStart = function() {
     }).then(function() {
         self.isInitialized = true;
         self.logger.info('FanController: Plugin started successfully on ' + self.getPlatformInfo());
-        self.commandRouter.pushConsoleMessage('FanController: Started successfully - Orange Pi PC GPIO 13');
+        self.commandRouter.pushConsoleMessage('FanController: Started successfully - Orange Pi PC GPIO 10');
     }).fail(function(error) {
         self.logger.error('FanController: Startup failed: ' + error);
         self.commandRouter.pushConsoleMessage('FanController: ERROR - ' + error);
@@ -144,7 +144,7 @@ FanController.prototype.setupDefaults = function() {
         check_interval: 10,
         fan_speed: 0,
         use_pwm: true,
-        gpio_pin: 13, // Orange Pi PC GPIO 13
+        gpio_pin: 10, // Orange Pi PC GPIO 10
         pwm_frequency: 50
     };
     
@@ -169,7 +169,7 @@ FanController.prototype.getUIConfig = function() {
             current_temp: temp.toFixed(1),
             current_speed: self.currentSpeed,
             pwm_frequency: "50 Hz",
-            gpio_pin: "GPIO 13 (Physical Pin 8)",
+            gpio_pin: "GPIO 10 (Physical Pin 35)",
             platform: self.getPlatformInfo(),
             temp_sensor: "thermal_zone0",
             is_running: self.isRunning
@@ -187,7 +187,7 @@ FanController.prototype.getUIConfig = function() {
             current_temp: "--",
             current_speed: self.currentSpeed,
             pwm_frequency: "50 Hz",
-            gpio_pin: "GPIO 13 (Physical Pin 8)",
+            gpio_pin: "GPIO 10 (Physical Pin 35)",
             platform: self.getPlatformInfo(),
             temp_sensor: "thermal_zone0",
             is_running: self.isRunning
@@ -301,7 +301,7 @@ FanController.prototype.getStatus = function() {
             running: self.isRunning,
             temperature: temp.toFixed(1) + '°C',
             current_speed: self.currentSpeed + '%',
-            gpio: 'GPIO 13 (Physical Pin 8)',
+            gpio: 'GPIO 10 (Physical Pin 35)',
             platform: self.getPlatformInfo(),
             pwm: '50Hz',
             temp_range: self.config.get('min_temp') + '°C - ' + self.config.get('max_temp') + '°C',
@@ -388,14 +388,14 @@ FanController.prototype.setupGPIO = function() {
     var self = this;
     var defer = libQ.defer();
     
-    self.logger.info('FanController: Setting up Orange Pi PC GPIO 13');
+    self.logger.info('FanController: Setting up Orange Pi PC GPIO 10');
     
     // Для Orange Pi используем sysfs
     exec('echo ' + self.GPIO_PIN_SYSFS + ' > /sys/class/gpio/export 2>/dev/null', function() {
         setTimeout(function() {
             exec('echo out > /sys/class/gpio/gpio' + self.GPIO_PIN_SYSFS + '/direction 2>/dev/null', function() {
                 exec('echo 0 > /sys/class/gpio/gpio' + self.GPIO_PIN_SYSFS + '/value 2>/dev/null', function() {
-                    self.logger.info('FanController: Orange Pi PC GPIO 13 setup with sysfs');
+                    self.logger.info('FanController: Orange Pi PC GPIO 10 setup with sysfs');
                     defer.resolve();
                 });
             });
