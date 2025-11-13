@@ -428,6 +428,7 @@ FanController.prototype.applyPWM = function(speed) {
     
     self.logger.info('FanController: Applying PWM ' + speed + '%');
     
+    // Останавливаем предыдущий ШИМ
     if (self.pwmInterval) {
         clearInterval(self.pwmInterval);
         self.pwmInterval = null;
@@ -443,17 +444,24 @@ FanController.prototype.applyPWM = function(speed) {
         return;
     }
     
-    var onTime = (speed / 100) * self.PWM_PERIOD_MS;
+    // ФИКС: Стабильный ШИМ 50 Гц (20ms период)
+    var periodMs = 20; // 50 Hz = 20ms
+    var onTime = Math.round((speed / 100) * periodMs);
+    var offTime = periodMs - onTime;
     
     function pwmCycle() {
-        exec('echo 1 > /sys/class/gpio/gpio' + self.GPIO_PIN_SYSFS + '/value 2>/dev/null', function() {});
-        
-        setTimeout(function() {
-            exec('echo 0 > /sys/class/gpio/gpio' + self.GPIO_PIN_SYSFS + '/value 2>/dev/null', function() {});
-        }, onTime);
+        if (onTime > 0) {
+            exec('echo 1 > /sys/class/gpio/gpio' + self.GPIO_PIN_SYSFS + '/value 2>/dev/null', function() {});
+        }
+        if (offTime > 0) {
+            setTimeout(function() {
+                exec('echo 0 > /sys/class/gpio/gpio' + self.GPIO_PIN_SYSFS + '/value 2>/dev/null', function() {});
+            }, onTime);
+        }
     }
     
-    self.pwmInterval = setInterval(pwmCycle, self.PWM_PERIOD_MS);
+    // Запускаем стабильный ШИМ
+    self.pwmInterval = setInterval(pwmCycle, periodMs);
 };
 
 FanController.prototype.startFanControl = function() {
