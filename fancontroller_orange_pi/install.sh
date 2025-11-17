@@ -32,6 +32,7 @@ chown volumio:volumio /var/log/fancontroller 2>/dev/null || true
 
 # Установка Node.js зависимостей
 echo "Installing Node.js dependencies..."
+cd "$(dirname "$0")"
 npm install --production --unsafe-perm
 
 echo ""

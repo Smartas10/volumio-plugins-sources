@@ -5,6 +5,11 @@ var fs = require('fs');
 var exec = require('child_process').exec;
 var config = new (require('v-conf'))();
 
+// Добавляем синхронное чтение JSON
+fs.readJsonSync = function(file) {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+};
+
 module.exports = FanController;
 
 function FanController(context) {
@@ -14,7 +19,7 @@ function FanController(context) {
     self.logger = self.context.logger;
     self.configManager = self.context.configManager;
     
-    // Конфигурация для Orange Pi PC - GPIO 10
+    // Конфигурация для Orange Pi PC - GPIO 10 (Physical Pin 35)
     self.GPIO_PIN = 10;
     self.TURN_ON_TEMP = 55;
     self.TURN_OFF_TEMP = 45;
@@ -29,7 +34,7 @@ FanController.prototype.onVolumioStart = function() {
     var self = this;
     self.configFile = self.commandRouter.pluginManager.getConfigurationFile(self.context, 'config.json');
     
-    self.logger.info('FanController: Starting plugin - GPIO 10, ON at 55°C, OFF at 45°C');
+    self.logger.info('FanController: Starting plugin - GPIO 10 (Pin 35), ON at 55°C, OFF at 45°C');
     
     try {
         if (self.commandRouter.consoleCommandService) {
@@ -75,7 +80,7 @@ FanController.prototype.onVolumioStart = function() {
     }).then(function() {
         self.isInitialized = true;
         self.logger.info('FanController: Plugin started successfully');
-        self.commandRouter.pushConsoleMessage('FanController: Started - GPIO 10, ON at 55°C, OFF at 45°C');
+        self.commandRouter.pushConsoleMessage('FanController: Started - GPIO 10 (Pin 35), ON at 55°C, OFF at 45°C');
     }).fail(function(error) {
         self.logger.error('FanController: Startup failed: ' + error);
         self.commandRouter.pushConsoleMessage('FanController: ERROR - ' + error);
@@ -147,36 +152,53 @@ FanController.prototype.getUIConfig = function() {
     var self = this;
     var defer = libQ.defer();
     
-    self.getSystemTemperature().then(function(temp) {
-        var config = {
-            enabled: self.config.get('enabled'),
-            turn_on_temp: self.config.get('turn_on_temp'),
-            turn_off_temp: self.config.get('turn_off_temp'),
-            check_interval: self.config.get('check_interval'),
-            current_temp: temp.toFixed(1),
-            current_state: self.currentState ? 'ON' : 'OFF',
-            gpio_pin: "GPIO 10 (Physical Pin 35)",
-            platform: self.getPlatformInfo(),
-            temp_sensor: "thermal_zone0",
-            is_running: self.isRunning
-        };
+    try {
+        var uiconf = fs.readJsonSync(__dirname + '/UIConfig.json');
         
-        defer.resolve(config);
-    }).fail(function(error) {
-        var fallbackConfig = {
-            enabled: self.config.get('enabled'),
-            turn_on_temp: self.config.get('turn_on_temp'),
-            turn_off_temp: self.config.get('turn_off_temp'),
-            check_interval: self.config.get('check_interval'),
-            current_temp: "--",
-            current_state: self.currentState ? 'ON' : 'OFF',
-            gpio_pin: "GPIO 10 (Physical Pin 35)",
-            platform: self.getPlatformInfo(),
-            temp_sensor: "thermal_zone0",
-            is_running: self.isRunning
-        };
-        defer.resolve(fallbackConfig);
-    });
+        self.getSystemTemperature().then(function(temp) {
+            // Обновляем значения в конфигурации UI
+            var elements = uiconf.sections[0].elements;
+            for (var i = 0; i < elements.length; i++) {
+                var element = elements[i];
+                if (element.id === 'enabled') element.value = self.config.get('enabled');
+                if (element.id === 'turn_on_temp') element.value = self.config.get('turn_on_temp');
+                if (element.id === 'turn_off_temp') element.value = self.config.get('turn_off_temp');
+                if (element.id === 'check_interval') element.value = self.config.get('check_interval');
+            }
+            
+            // Обновляем секцию статуса
+            var statusElements = uiconf.sections[1].elements;
+            for (var j = 0; j < statusElements.length; j++) {
+                var statusElement = statusElements[j];
+                if (statusElement.id === 'current_temp') statusElement.value = temp.toFixed(1) + '°C';
+                if (statusElement.id === 'current_state') statusElement.value = self.currentState ? 'ON' : 'OFF';
+            }
+            
+            defer.resolve(uiconf);
+        }).fail(function(error) {
+            // Fallback конфигурация
+            var elements = uiconf.sections[0].elements;
+            for (var i = 0; i < elements.length; i++) {
+                var element = elements[i];
+                if (element.id === 'enabled') element.value = self.config.get('enabled');
+                if (element.id === 'turn_on_temp') element.value = self.config.get('turn_on_temp');
+                if (element.id === 'turn_off_temp') element.value = self.config.get('turn_off_temp');
+                if (element.id === 'check_interval') element.value = self.config.get('check_interval');
+            }
+            
+            var statusElements = uiconf.sections[1].elements;
+            for (var j = 0; j < statusElements.length; j++) {
+                var statusElement = statusElements[j];
+                if (statusElement.id === 'current_temp') statusElement.value = '--';
+                if (statusElement.id === 'current_state') statusElement.value = self.currentState ? 'ON' : 'OFF';
+            }
+            
+            defer.resolve(uiconf);
+        });
+    } catch (error) {
+        self.logger.error('FanController: Failed to load UIConfig: ' + error);
+        defer.reject(error);
+    }
     
     return defer.promise;
 };
@@ -203,7 +225,7 @@ FanController.prototype.updateUIConfig = function(data) {
     }).then(function() {
         defer.resolve({success: true, message: 'Settings updated'});
     }).fail(function(error) {
-        defer.reject(error);
+        defer.reject(new Error('Failed to update config: ' + error));
     });
     
     return defer.promise;
@@ -246,7 +268,7 @@ FanController.prototype.enableFanControl = function() {
     }).then(function() {
         defer.resolve('Fan control ENABLED successfully');
     }).fail(function(error) {
-        defer.reject('Failed to enable fan control: ' + error);
+        defer.reject(new Error('Failed to enable fan control: ' + error));
     });
     
     return defer.promise;
@@ -263,7 +285,7 @@ FanController.prototype.disableFanControl = function() {
         self.stopFanControl();
         defer.resolve('Fan control DISABLED successfully');
     }).fail(function(error) {
-        defer.reject('Failed to disable fan control: ' + error);
+        defer.reject(new Error('Failed to disable fan control: ' + error));
     });
     
     return defer.promise;
@@ -335,13 +357,13 @@ FanController.prototype.getSystemTemperature = function() {
             var temp = parseInt(data) / 1000;
             defer.resolve(temp);
         } else {
-            fs.readFile('/sys/class/sunxi_thermal/thermal_zone0/temp', 'utf8', function(err2, data2) {
-                if (!err2 && data2) {
+            // Fallback на альтернативный датчик
+            exec('cat /sys/class/thermal/thermal_zone*/temp 2>/dev/null | head -1', function(err2, data2) {
+                if (!err2 && data2 && data2.trim()) {
                     var temp = parseInt(data2) / 1000;
                     defer.resolve(temp);
                 } else {
-                    // Fallback temperature
-                    defer.resolve(40);
+                    defer.reject(new Error('Cannot read temperature'));
                 }
             });
         }
@@ -363,24 +385,19 @@ FanController.prototype.setupGPIO = function() {
     var self = this;
     var defer = libQ.defer();
     
-    self.logger.info('FanController: Setting up GPIO 10');
+    self.logger.info('FanController: Setting up GPIO 10 (Pin 35)');
     
-    var commands = [
-        'echo 10 > /sys/class/gpio/export 2>/dev/null || true',
-        'sleep 0.5',
-        'echo out > /sys/class/gpio/gpio10/direction',
-        'echo 0 > /sys/class/gpio/gpio10/value'
-    ];
-    
-    exec(commands.join(' && '), function(error, stdout, stderr) {
-        if (error) {
-            self.logger.error('FanController: GPIO setup failed: ' + error);
-            defer.reject(error);
-        } else {
-            self.logger.info('FanController: GPIO setup completed');
-            defer.resolve();
-        }
-    });
+    // Проверяем, не экспортирован ли уже GPIO
+    exec('echo 10 > /sys/class/gpio/export 2>/dev/null; sleep 0.5; echo out > /sys/class/gpio/gpio10/direction && echo 0 > /sys/class/gpio/gpio10/value', 
+        function(error, stdout, stderr) {
+            if (error) {
+                self.logger.error('FanController: GPIO setup failed: ' + error);
+                defer.reject(new Error('GPIO setup failed: ' + error));
+            } else {
+                self.logger.info('FanController: GPIO setup completed');
+                defer.resolve();
+            }
+        });
     
     return defer.promise;
 };
@@ -439,7 +456,7 @@ FanController.prototype.startFanControl = function() {
         return defer.promise;
     }
     
-    self.logger.info('FanController: Starting fan control - GPIO 10');
+    self.logger.info('FanController: Starting fan control - GPIO 10 (Pin 35)');
     
     // Настраиваем GPIO
     self.setupGPIO().then(function() {
@@ -465,7 +482,7 @@ FanController.prototype.startFanControl = function() {
                 
                 if (newState !== self.currentState) {
                     self.setFanState(newState);
-                    self.logger.info('FanController: ' + temp.toFixed(1) + '°C → ' + (newState ? 'ON' : 'OFF'));
+                    self.logger.debug('FanController: ' + temp.toFixed(1) + '°C → ' + (newState ? 'ON' : 'OFF'));
                 }
             }).fail(function(error) {
                 self.logger.error('FanController: Temperature check failed: ' + error);
@@ -503,7 +520,7 @@ FanController.prototype.cleanupGPIO = function() {
     self.stopFanControl();
     
     setTimeout(function() {
-        exec('echo 10 > /sys/class/gpio/unexport', function() {});
+        exec('echo 0 > /sys/class/gpio/gpio10/value 2>/dev/null; echo 10 > /sys/class/gpio/unexport 2>/dev/null', function() {});
     }, 1000);
 };
 
@@ -535,7 +552,6 @@ FanController.prototype.onStop = function() {
 
 FanController.prototype.onRestart = function() {
     this.onVolumioShutdown();
-    setTimeout(this.onVolumioStart.bind(this), 5000);
     return libQ.resolve();
 };
 

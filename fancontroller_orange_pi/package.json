@@ -1,6 +1,6 @@
 {
   "name": "fancontroller_orangepi_gpio10",
-  "version": "5.0.0_1",
+  "version": "5.0.0",
   "description": "Fan Controller for Orange Pi PC - GPIO 10, Simple ON/OFF Control",
   "main": "index.js",
   "scripts": {
