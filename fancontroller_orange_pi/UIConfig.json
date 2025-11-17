@@ -2,7 +2,7 @@
   "page": {
     "label": "Fan Controller",
     "title": "Orange Pi PC Fan Control", 
-    "description": "50Hz PWM control for Orange Pi PC - GPIO 10 (Physical Pin 35), 46°C-70°C"
+    "description": "Simple ON/OFF control for Orange Pi PC - GPIO 10 (Physical Pin 35)"
   },
   "sections": [
     {
@@ -18,22 +18,22 @@
           "value": true
         },
         {
-          "id": "min_temp",
+          "id": "turn_on_temp",
           "element": "number",
-          "label": "Min Temperature (°C)",
-          "description": "Fan starts at 1% speed (46°C)",
-          "min": 40,
-          "max": 50,
-          "value": 46
+          "label": "Turn ON Temperature (°C)",
+          "description": "Fan turns ON at this temperature",
+          "min": 50,
+          "max": 70,
+          "value": 55
         },
         {
-          "id": "max_temp",
+          "id": "turn_off_temp",
           "element": "number",
-          "label": "Max Temperature (°C)",
-          "description": "Full 100% speed at this temperature",
-          "min": 65,
-          "max": 80,
-          "value": 70
+          "label": "Turn OFF Temperature (°C)",
+          "description": "Fan turns OFF at this temperature",
+          "min": 40,
+          "max": 55,
+          "value": 45
         },
         {
           "id": "check_interval",
@@ -59,18 +59,11 @@
           "value": "--"
         },
         {
-          "id": "current_speed",
+          "id": "current_state",
           "element": "value",
-          "label": "Fan Speed",
-          "description": "Current PWM duty cycle",
+          "label": "Fan State",
+          "description": "Current fan state",
           "value": "--"
-        },
-        {
-          "id": "pwm_frequency",
-          "element": "value",
-          "label": "PWM Frequency",
-          "description": "Signal frequency",
-          "value": "50 Hz"
         },
         {
           "id": "gpio_pin",

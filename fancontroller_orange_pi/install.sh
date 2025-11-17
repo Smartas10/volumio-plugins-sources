@@ -2,7 +2,7 @@
 
 echo "================================================"
 echo "Fan Controller for Orange Pi PC"
-echo "GPIO 10 (Physical Pin 35) - 50Hz PWM - 46°C to 70°C"
+echo "GPIO 10 (Physical Pin 35) - ON at 55°C, OFF at 45°C"
 echo "================================================"
 
 # Проверка системы
@@ -39,8 +39,8 @@ echo "================================================"
 echo "INSTALLATION COMPLETE"
 echo "================================================"
 echo "Fan Controller installed successfully"
-echo "GPIO 10 (Physical Pin 35) - 50Hz Software PWM"
-echo "Temperature range: 46°C (1%) to 70°C (100%)"
+echo "GPIO 10 (Physical Pin 35) - Simple ON/OFF control"
+echo "Turns ON at 55°C, OFF at 45°C"
 echo "Plugin will auto-start on boot"
 
 echo "plugininstallend"

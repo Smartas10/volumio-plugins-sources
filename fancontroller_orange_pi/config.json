@@ -1,9 +1,7 @@
 {
   "enabled": true,
-  "min_temp": 46,
-  "max_temp": 70,
+  "turn_on_temp": 55,
+  "turn_off_temp": 45,
   "check_interval": 10,
-  "fan_speed": 0,
-  "gpio_pin": 10,
-  "pwm_frequency": 50
+  "gpio_pin": 10
 }
